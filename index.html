@@ -1976,19 +1976,25 @@ function parseJSON(v, fallback) {
   try { return JSON.parse(v); } catch(e) { return fallback; }
 }
 function osToSB(os) {
+  // materiales / mano_obra / checklist → TEXT en la DB (sin conversión)
+  // plazo / km_actuales / km_cierre / duracion_hs → NUMERIC en la DB
   return {
     ...os,
-    materiales: parseJSON(os.materiales, []),
-    mano_obra:  parseJSON(os.mano_obra,  []),
-    checklist:  parseJSON(os.checklist,  []),
+    plazo:       parseFloat(os.plazo_horas) || null,
+    km_actuales: parseFloat(os.km_actuales) || null,
+    km_cierre:   parseFloat(os.km_cierre)   || null,
+    duracion_hs: parseFloat(os.duracion_hs) || null,
   };
 }
 function osFromSB(os) {
+  // Reconstruir strings a partir de los numéricos de la DB
   return normalizeOS({
     ...os,
-    materiales: typeof os.materiales === 'string' ? os.materiales : JSON.stringify(os.materiales || []),
-    mano_obra:  typeof os.mano_obra  === 'string' ? os.mano_obra  : JSON.stringify(os.mano_obra  || []),
-    checklist:  typeof os.checklist  === 'string' ? os.checklist  : JSON.stringify(os.checklist  || []),
+    plazo_horas: os.plazo   != null ? String(os.plazo)       : '',
+    km_actuales: os.km_actuales != null ? String(os.km_actuales) : '',
+    km_cierre:   os.km_cierre   != null ? String(os.km_cierre)   : '',
+    duracion_hs: os.duracion_hs != null ? String(os.duracion_hs) : '',
+    // materiales / mano_obra / checklist ya son TEXT — no se tocan
   });
 }
 
@@ -7942,15 +7948,18 @@ document.addEventListener('DOMContentLoaded', () => {
   function hasRole(...roles) { const u = currentUser(); return u && roles.includes(u.rol); }
 
   async function loadUsers() {
-    const { data, error } = await SB.from('profiles').select('*');
+    const { data, error } = await SB.from('usuarios').select('*');
     if (!error && data) _cachedUsers = data;
   }
 
   async function saveUsers(users) {
     for (const u of users) {
-      const { id, nombre, usuario, rol, activo, creado } = u;
+      const { id, nombre, usuario, rol, email, activo } = u;
       if (!id) continue;
-      await SB.from('profiles').upsert({ id, nombre, usuario, rol, activo, creado }, { onConflict: 'id' });
+      await SB.from('usuarios').upsert(
+        { id, nombre, usuario, rol, email: email||'', activo: activo !== false },
+        { onConflict: 'id' }
+      );
     }
     _cachedUsers = users;
   }
@@ -7970,7 +7979,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setSyncStatus('spin', '↻ Sincronizando con Supabase…');
     for (const u of users) {
       const { id, nombre, usuario, rol, activo, creado } = u;
-      if (id) await SB.from('profiles').upsert({ id, nombre, usuario, rol, activo, creado }, { onConflict: 'id' });
+      if (id) await SB.from('usuarios').upsert({ id, nombre, usuario, rol, email: u.email||'', activo: activo !== false }, { onConflict: 'id' });
     }
     setSyncStatus('ok', '✓ Usuarios sincronizados con Supabase');
   }
@@ -7992,7 +8001,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (btn) { btn.disabled=false; btn.textContent='INGRESAR'; }
         return;
       }
-      const { data: profile, error: pErr } = await SB.from('profiles')
+      const { data: profile, error: pErr } = await SB.from('usuarios')
         .select('*').eq('id', data.user.id).single();
       if (pErr || !profile || !profile.activo) {
         await SB.auth.signOut();
@@ -8042,7 +8051,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ls = document.getElementById('login-screen');
 
     if (session?.user) {
-      const { data: profile } = await SB.from('profiles')
+      const { data: profile } = await SB.from('usuarios')
         .select('*').eq('id', session.user.id).single();
       if (profile && profile.activo) {
         _currentProfile = profile;
