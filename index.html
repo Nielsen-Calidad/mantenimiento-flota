@@ -1964,22 +1964,14 @@ function jsonOut(data) {
 // Flota + Órdenes de Servicio + Google Sheets Sync
 // ════════════════════════════════════════════════════════════
 
-// ── STORAGE KEYS ─────────────────────────────────────────
+// ── SUPABASE ──────────────────────────────────────────────
 const SUPABASE_URL = 'https://zgscpasaynbhverfpisg.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_MZRnn7y5Uer0vureLlMwXw_pjXWtFRg';
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── STORAGE KEYS ─────────────────────────────────────────
 const SK_OS  = 'nielsen_os_v2';
 const SK_VEH = 'nielsen_veh_v2';
-// Correlo UNA SOLA VEZ en la consola del navegador con tus datos actuales
-const { createClient } = supabase;
-const db = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// Toma los datos del localStorage actual
-const os = JSON.parse(localStorage.getItem('nielsen_os_v2') || '[]');
-const veh = JSON.parse(localStorage.getItem('nielsen_veh_v2') || '[]');
-
-await db.from('vehiculos').upsert(veh);
-await db.from('ordenes_servicio').upsert(os);
-console.log('Migración completa');
 
 // ── STATE ────────────────────────────────────────────────
 // ===================================================================
@@ -1987,9 +1979,6 @@ console.log('Migración completa');
 // los dispositivos la usen sin necesidad de configurar manualmente.
 // Dejar vacío ('') para usar la URL guardada en cada dispositivo.
 // ===================================================================
-const SUPABASE_URL = 'https://zgscpasaynbhverfpisg.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_MZRnn7y5Uer0vureLlMwXw_pjXWtFRg';
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let ordenes     = [];
 let vehicles    = [];
 let editingId   = null;
@@ -2556,15 +2545,20 @@ function switchVehTab(n) {
 // ════════════════════════════════════════════════════════════
 // SYNC — LOAD & SAVE
 // ════════════════════════════════════════════════════════════
-async function cargarDesdeSupabase() {
+// ── loadData — carga datos desde Supabase ────────────────
+async function loadData() {
+  await cargarDesdeSupabase();
+}
+
+
   try {
     // 1. Cargar Vehículos
-    const { data: vehData, error: vehErr } = await supabase.from('vehiculos').select('*');
+    const { data: vehData, error: vehErr } = await db.from('vehiculos').select('*');
     if (vehErr) throw vehErr;
-    vehicles = vehData || []; // Directamente asignamos el array
+    vehicles = vehData || [];
 
     // 2. Cargar Órdenes de Servicio
-    const { data: osData, error: osErr } = await supabase.from('ordenes_servicio').select('*');
+    const { data: osData, error: osErr } = await db.from('ordenes_servicio').select('*');
     if (osErr) throw osErr;
     ordenes = osData || [];
 
@@ -8134,15 +8128,41 @@ document.addEventListener('DOMContentLoaded', () => {
   function hasRole(...roles)   { const u=currentUser(); return u && roles.includes(u.rol); }
 
   // ── Login / Logout ─────────────────────────────────────────────────────
-  // ANTES — login contra localStorage/Sheets
- // DESPUÉS — login con Supabase Auth
+ // ── Login con sistema local de usuarios ──────────────────
  async function doLogin() {
-  const email = document.getElementById('login-user').value;
-  const pass  = document.getElementById('login-pass').value;
-  
-  const { data, error } = await db.auth.signInWithPassword({ email, password: pass });
-  if (error) { /* mostrar error */ return; }
-  // sesión gestionada automáticamente por Supabase
+  const usuario = document.getElementById('login-user').value.trim();
+  const pass    = document.getElementById('login-pass').value;
+  const errEl   = document.getElementById('login-error');
+  const btn     = document.getElementById('login-btn');
+
+  if (!usuario || !pass) { showLoginError('Completá usuario y contraseña.'); return; }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'VERIFICANDO...'; }
+  if (errEl) errEl.style.display = 'none';
+
+  try {
+    const hash  = await sha256(pass);
+    const users = getUsers();
+    const found = users.find(u => u.usuario === usuario && u.passwordHash === hash && u.activo !== false);
+
+    if (!found) {
+      showLoginError('Usuario o contraseña incorrectos.');
+    } else {
+      setSession(found);
+      const ls = document.getElementById('login-screen');
+      if (ls) { ls.style.display = 'none'; ls.classList.remove('visible'); }
+      document.body.classList.remove('reader-mode');
+      applyRoleUI(found);
+      updateUserBadge(found);
+      await loadData();
+      refresh();
+    }
+  } catch(e) {
+    showLoginError('Error interno. Intentá de nuevo.');
+    console.error('doLogin error:', e);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'INGRESAR'; }
+  }
  }
 
   function showLoginError(msg) {
