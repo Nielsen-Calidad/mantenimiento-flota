@@ -3326,16 +3326,20 @@ async function saveOS() {
     }
   }
 
-  const synced = await pushOS(finalOS);
-  if (synced) setSyncState('ok', 'Guardado en Supabase · ' + new Date().toLocaleTimeString('es-AR'));
-  else setSyncState('err', 'Error al guardar en Supabase');
-
-  // Subir fotos pendientes (adjuntadas antes de tener el ID de la OS)
-  flushPendingOSPhotos(finalOS.id).catch(() => {});
-
+  // Actualización optimista: cerrar modal y refrescar UI de inmediato
   btn.textContent = '💾 Guardar OS'; btn.disabled = false;
   closeModal('modal-os');
   refresh();
+  setSyncState('syncing', 'Guardando...');
+
+  // Guardar en Supabase en segundo plano
+  pushOS(finalOS).then(synced => {
+    if (synced) setSyncState('ok', 'Guardado · ' + new Date().toLocaleTimeString('es-AR'));
+    else setSyncState('err', 'Error al guardar en Supabase');
+  });
+
+  // Subir fotos pendientes (adjuntadas antes de tener el ID de la OS)
+  flushPendingOSPhotos(finalOS.id).catch(() => {});
 }
 
 // ════════════════════════════════════════════════════════════
@@ -3387,10 +3391,12 @@ async function saveTallerWork() {
     materiales: mats, mano_obra: mo
   };
 
-  await pushOS(ordenes[i]);
-  setSyncState('ok', 'Trabajo guardado · ' + new Date().toLocaleTimeString('es-AR'));
   closeModal('modal-taller');
   refresh();
+  setSyncState('syncing', 'Guardando...');
+  pushOS(ordenes[i]).then(ok => {
+    setSyncState(ok ? 'ok' : 'err', ok ? 'Trabajo guardado · ' + new Date().toLocaleTimeString('es-AR') : 'Error al guardar');
+  });
 }
 
 // ════════════════════════════════════════════════════════════
