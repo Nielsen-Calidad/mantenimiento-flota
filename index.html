@@ -4880,6 +4880,23 @@ function iniciarTarea(btn, id) {
   if (!os || os.estado !== 'En ejecución') {
     alert('La OS debe estar "En ejecución" para iniciar tareas individuales.'); return;
   }
+
+  // Bloqueo: revisión mecánica requiere lavado completado
+  const desc = (tr.querySelector('input[type=text]')?.value || '').toLowerCase();
+  const esRevision = /revis|mec[aá]ni/i.test(desc);
+  if (esRevision) {
+    const todasLasFilas = Array.from(document.querySelectorAll('#tareas-tbody tr'));
+    const lavadosPendientes = todasLasFilas.filter(r => {
+      const d = (r.querySelector('input[type=text]')?.value || '').toLowerCase();
+      return /lavado/i.test(d) && r.dataset.estado !== 'Completada';
+    });
+    if (lavadosPendientes.length > 0) {
+      const asignados = lavadosPendientes.map(r => r.querySelector('.tarea-sel-asignado')?.value || '').filter(Boolean).join(', ');
+      alert('⚠ No podés iniciar la revisión mecánica hasta que el lavado esté completado.' + (asignados ? '\n\nLavado pendiente: ' + asignados : ''));
+      return;
+    }
+  }
+
   tr.dataset.tsInicio = new Date().toISOString();
   tr.dataset.tsFin    = '';
   tr.dataset.estado   = 'En curso';
