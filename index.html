@@ -3717,10 +3717,11 @@ function lockEjecucion(lock, message, planMode = false) {
     tb.style.pointerEvents = lock ? 'none' : '';
   });
 
-  // -- Botones "+ Agregar" de las tablas: mecánico SÍ puede agregar filas --
+  // -- Botones "+ Agregar" de las tablas: en planMode supervisor puede agregar tareas --
   document.querySelectorAll('.mat-add-row button').forEach(b => {
-    b.disabled = lock;
-    b.style.opacity = lock ? '0.45' : '';
+    const lockBtn = b.id === 'btn-add-tarea' ? (lock && !planMode) : lock;
+    b.disabled = lockBtn;
+    b.style.opacity = lockBtn ? '0.45' : '';
   });
 
   // -- Foto upload: mecánico SÍ puede agregar fotos --
