@@ -2756,7 +2756,8 @@ function renderFleet() {
   const grid = document.getElementById('fleet-grid');
   if (!grid) return;
 
-  let list = vehicles.filter(v => v.activo);
+  let list = vehicles.filter(v => v.activo)
+    .sort((a, b) => (a.modelo||'').localeCompare(b.modelo||'', 'es'));
 
   // Apply filter
   if (activeFleetFilter !== 'Todos') {
@@ -3730,19 +3731,21 @@ function lockEjecucion(lock, message, planMode = false) {
 
   // -- Campos exclusivos del supervisor: bloqueados siempre para mecánico --
   const esSupervisor = ['admin','supervisor','flota'].includes(rol);
-  const lockSuper    = lock || !esSupervisor; // bloqueado si está cerrado O si no es supervisor
+  // En Pendiente (planMode=true) los supervisores SÍ pueden asignar ejecutantes y fecha compromiso.
+  // Solo se bloquean si la OS está cerrada (Finalizada/Aprobada) o si no es supervisor.
+  const lockSuperAssign = planMode ? !esSupervisor : (lock || !esSupervisor);
   const superFields  = ['f-fecha-compromiso','f-ejec-select'];
   superFields.forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    el.disabled = lockSuper;
-    el.style.opacity = lockSuper && !lock ? '0.45' : lock ? '0.5' : '';
-    el.style.cursor  = lockSuper ? 'not-allowed' : '';
+    el.disabled = lockSuperAssign;
+    el.style.opacity = lockSuperAssign ? '0.45' : '';
+    el.style.cursor  = lockSuperAssign ? 'not-allowed' : '';
   });
   const addEjecBtn = document.querySelector('button[onclick="agregarEjecutante()"]');
   if (addEjecBtn) {
-    addEjecBtn.disabled = lockSuper;
-    addEjecBtn.style.opacity = lockSuper && !lock ? '0.45' : lock ? '0.5' : '';
+    addEjecBtn.disabled = lockSuperAssign;
+    addEjecBtn.style.opacity = lockSuperAssign ? '0.45' : '';
   }
 
   // -- Banner informativo bajo el cronómetro --
@@ -4423,7 +4426,7 @@ async function saveOS() {
   // Solo aplica cuando la OS ya tiene trabajo iniciado (no en Pendiente)
   const chkSec = document.getElementById('f-checklist-section');
   const chkVisible = chkSec && chkSec.style.display !== 'none';
-  if (chkVisible && estadoActual !== 'Pendiente') {
+  if (chkVisible && ['Finalizada', 'Aprobada'].includes(estadoActual)) {
     const chkData = parseJSON(d.checklist, null);
     if (chkData && Array.isArray(chkData.items)) {
       const faltantes = chkData.items.filter(it => it.oblig && !it.checked);
@@ -9628,6 +9631,7 @@ function getChecklistPlan(modelo, vehId) {
 
   // ── Checklist Correctivo ─────────────────────────────────
   const CHECKLIST_CORR = [
+    { cat:'Lavado', desc:'Lavado exterior del vehículo previo a la intervención', oblig:true },
     { cat:'Diagnóstico', desc:'Fallo reportado documentado y comprendido', oblig:true },
     { cat:'Diagnóstico', desc:'Confirmación del síntoma con el operador / solicitante', oblig:true },
     { cat:'Diagnóstico', desc:'Identificación de sistemas y componentes afectados', oblig:true },
@@ -9652,6 +9656,7 @@ function getChecklistPlan(modelo, vehId) {
 
   // ── Checklist Expansión / Mejora ─────────────────────────
   const CHECKLIST_EXP = [
+    { cat:'Lavado', desc:'Lavado exterior del vehículo previo a la intervención', oblig:true },
     { cat:'Planificación', desc:'Planos o instrucciones de instalación revisados', oblig:true },
     { cat:'Planificación', desc:'Materiales, componentes y herramientas verificados', oblig:true },
     { cat:'Planificación', desc:'Compatibilidad del componente con el vehículo confirmada', oblig:true },
@@ -9891,11 +9896,11 @@ function renderChecklistItems(items, container, readOnly=false, savedChecklist=n
   });
 
   const catIcons = {
-    'Motor':'⚙️', 'Filtros':'🔲', 'Fluidos':'💧', 'Frenos':'🔴', 'Suspensión':'🔧',
+    'Lavado':'🚿', 'Motor':'⚙️', 'Filtros':'🔲', 'Fluidos':'💧', 'Frenos':'🔴', 'Suspensión':'🔧',
     'Neumáticos':'⭕', 'Eléctrico':'⚡', 'Transmisión':'⚙', 'Seguridad':'🛡',
     'Cabina':'🚪', 'Carrocería':'🏗', 'Dirección':'🎯', 'Estructura':'🏗',
     'Conexiones':'🔌', 'Enganche':'🔗', 'Luces':'💡', 'Ejes':'🔩',
-    'Documentación':'📄', 'Dirección':'🎯'
+    'Documentación':'📄'
   };
 
   let total = items.length;
@@ -9919,8 +9924,8 @@ function renderChecklistItems(items, container, readOnly=false, savedChecklist=n
           </div>`;
         }
         return `<div class="checklist-item" onclick="document.getElementById('${cbId}').click()">
-          <input type="checkbox" id="${cbId}" ${item.checked?'checked':''} data-idx="${item.idx}"
-            onclick="event.stopPropagation();updateChecklistProgress()">
+          <input type="checkbox" id="${cbId}" ${item.checked?'checked':''} data-idx="${item.idx}" data-cat="${item.cat}"
+            onclick="event.stopPropagation();if(checkLavadoGate(this))updateChecklistProgress();else this.checked=false;">
           <div class="checklist-item-body">
             <div class="checklist-item-desc" id="${cbId}-desc">${escHtml(item.desc)}
               ${item.oblig ? '<span class="checklist-tag tag-oblig">Obligatorio</span>' : '<span class="checklist-tag tag-rec">Recomendado</span>'}
@@ -9951,6 +9956,43 @@ function renderChecklistItems(items, container, readOnly=false, savedChecklist=n
     </div>`;
 
   updateChecklistProgress();
+  _applyLavadoGateVisual(); // Estado visual inicial
+}
+
+function checkLavadoGate(checkbox) {
+  if (checkbox.dataset.cat === 'Lavado') {
+    _applyLavadoGateVisual();
+    return true;
+  }
+  const lavadoItems = Array.from(document.querySelectorAll('input[type=checkbox][data-cat="Lavado"]'));
+  if (lavadoItems.length === 0) return true;
+  if (lavadoItems.every(cb => cb.checked)) return true;
+  // Lavado incompleto — mostrar aviso inline
+  let warn = document.getElementById('lavado-gate-warn');
+  if (!warn) {
+    warn = document.createElement('div');
+    warn.id = 'lavado-gate-warn';
+    warn.style.cssText = 'background:#7f1d1d22;border:1px solid #ef4444;color:#ef4444;padding:8px 12px;border-radius:6px;font-size:12px;margin:8px 0;';
+    warn.textContent = '🚿 Completá el lavado del vehículo antes de iniciar la revisión mecánica.';
+    const wrap = document.querySelector('.checklist-wrap');
+    if (wrap) wrap.insertBefore(warn, wrap.querySelector('.checklist-group'));
+  }
+  warn.style.display = '';
+  setTimeout(() => { if (warn) warn.style.display = 'none'; }, 3000);
+  return false;
+}
+
+function _applyLavadoGateVisual() {
+  const lavadoItems = Array.from(document.querySelectorAll('input[type=checkbox][data-cat="Lavado"]'));
+  if (lavadoItems.length === 0) return;
+  const lavadoDone = lavadoItems.every(cb => cb.checked);
+  document.querySelectorAll('input[type=checkbox][data-cat]:not([data-cat="Lavado"])').forEach(cb => {
+    const row = cb.closest('.checklist-item');
+    if (!row) return;
+    row.style.opacity = lavadoDone ? '' : '0.45';
+    row.style.pointerEvents = lavadoDone ? '' : 'auto'; // permite click para mostrar aviso
+    row.title = lavadoDone ? '' : 'Completá el lavado primero';
+  });
 }
 
 function setBRM(btn) {
@@ -10805,7 +10847,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!usr || !pass) { showLoginError('Ingresá usuario y contraseña.'); return; }
     if (btn) { btn.disabled=true; btn.textContent='Verificando…'; }
     try {
-      const email = usr + EMAIL_DOMAIN;
+      const email = usr.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9._-]/g,'') + EMAIL_DOMAIN;
       const { data, error } = await SB.auth.signInWithPassword({ email, password: pass });
       if (error || !data?.user) {
         showLoginError((error?.message || 'Error desconocido') + ' [email: ' + email + ']');
@@ -10825,6 +10867,7 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('login-screen').style.display='none';
       document.body.classList.remove('reader-mode');
       applyRoleUI(profile);
+      redirectAfterLogin(profile.rol);
       updateUserBadge(profile);
       refresh();
       if (btn) { btn.disabled=false; btn.textContent='INGRESAR'; }
@@ -10869,6 +10912,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.remove('reader-mode');
         if (ls) { ls.style.display='none'; ls.classList.remove('visible'); }
         applyRoleUI(profile);
+        redirectAfterLogin(profile.rol);
         updateUserBadge(profile);
       } else {
         await SB.auth.signOut();
@@ -10934,16 +10978,6 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.display = allowed.includes(rol) ? '' : 'none';
     });
 
-    // Solicitante: ir directo a sus solicitudes
-    if (rol === 'solicitante') {
-      showSection('mis-os');
-    }
-
-    // Mecánico: ir directo a sus tareas
-    if (rol === 'mecanico') {
-      showSection('mis-tareas');
-    }
-
     // Mecánico: ocultar sección configuración y redirigir si estaba en ella
     const secConfig = document.getElementById('sec-config');
     if (secConfig) {
@@ -10965,6 +10999,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       });
     }
+  }
+
+  function redirectAfterLogin(rol) {
+    if (rol === 'solicitante') { showSection('mis-os'); }
+    else if (rol === 'mecanico') { showSection('mis-tareas'); }
+    else { showSection('dashboard'); }
   }
 
   function updateUserBadge(userOrSession) {
