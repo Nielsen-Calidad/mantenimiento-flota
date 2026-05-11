@@ -295,6 +295,11 @@ textarea{resize:vertical;min-height:68px;line-height:1.55;}
 .checklist-wrap{background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:14px 16px;margin-top:4px;}
 .checklist-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
 .checklist-header-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--orange);}
+.tip-btn{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:rgba(96,165,250,.12);border:1px solid rgba(96,165,250,.25);color:#60a5fa;font-size:9px;font-weight:700;cursor:pointer;margin-left:5px;vertical-align:middle;flex-shrink:0;transition:background .15s;user-select:none;}
+.tip-btn:hover{background:rgba(96,165,250,.28);}
+#tip-card{position:fixed;z-index:700;width:300px;background:#1e293b;border:1px solid #334155;border-radius:10px;padding:14px 16px 12px;box-shadow:0 8px 32px rgba(0,0,0,.55);font-size:12px;color:#e2e8f0;line-height:1.6;display:none;pointer-events:auto;}
+#tip-card-title{font-weight:700;font-size:12.5px;color:#60a5fa;margin-bottom:7px;}
+#tip-card-close{position:absolute;top:8px;right:10px;cursor:pointer;color:#64748b;font-size:13px;}
 .checklist-progress{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
 .checklist-prog-bar{height:4px;background:var(--surface3);border-radius:3px;overflow:hidden;margin-bottom:12px;}
 .checklist-prog-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--orange),var(--orange2));transition:width .4s;}
@@ -743,7 +748,7 @@ textarea{resize:vertical;min-height:68px;line-height:1.55;}
     /* ── BARRA DE USUARIO (nav) ─────────────────────────────── */
     #user-bar {
       display: flex; align-items: center; gap: 10px;
-      margin-left: auto; padding: 0 12px;
+      margin-left: auto; padding: 0 12px; position: relative;
     }
     #user-bar .user-name {
       font-size: 12px; font-weight: 600; color: var(--text);
@@ -889,6 +894,39 @@ textarea{resize:vertical;min-height:68px;line-height:1.55;}
       .veh-avatar, .veh-avatar-placeholder { width: 56px; height: 56px; font-size: 26px; }
     }
 
+    /* ── AGENTE CHAT ─────────────────────────────────── */
+    .chat-wrap{display:flex;flex-direction:column;height:calc(100vh - 180px);min-height:400px;background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+    .chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth;}
+    .chat-messages::-webkit-scrollbar{width:4px;}
+    .chat-messages::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+    .msg{max-width:82%;display:flex;flex-direction:column;gap:4px;}
+    .msg.user{align-self:flex-end;}
+    .msg.assistant{align-self:flex-start;}
+    .msg-bubble{padding:11px 15px;border-radius:12px;font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
+    .msg.user .msg-bubble{background:var(--orange);color:#fff;border-bottom-right-radius:3px;}
+    .msg.assistant .msg-bubble{background:var(--surface3);border:1px solid var(--border);color:var(--text);border-bottom-left-radius:3px;}
+    .msg-time{font-size:10px;color:var(--muted);padding:0 4px;}
+    .msg.user .msg-time{text-align:right;}
+    .chat-input-row{display:flex;gap:8px;padding:14px 16px;border-top:1px solid var(--border);background:var(--surface2);}
+    .chat-input{flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;resize:none;height:44px;max-height:120px;overflow-y:auto;transition:border-color .2s;}
+    .chat-input:focus{outline:none;border-color:var(--orange);}
+    .chat-send-btn{background:var(--grad);border:none;border-radius:10px;padding:0 18px;color:#fff;font-size:16px;cursor:pointer;transition:opacity .15s;flex-shrink:0;}
+    .chat-send-btn:hover{opacity:.85;}
+    .chat-send-btn:disabled{opacity:.4;cursor:default;}
+    .chat-thinking{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px;padding:10px 15px;background:var(--surface3);border:1px solid var(--border);border-radius:12px;border-bottom-left-radius:3px;align-self:flex-start;}
+    .chat-thinking-dots{display:flex;gap:4px;}
+    .chat-thinking-dots span{width:6px;height:6px;background:var(--orange);border-radius:50%;animation:dotBounce 1.2s infinite;}
+    .chat-thinking-dots span:nth-child(2){animation-delay:.2s;}
+    .chat-thinking-dots span:nth-child(3){animation-delay:.4s;}
+    @keyframes dotBounce{0%,80%,100%{transform:translateY(0)}40%{transform:translateY(-6px)}}
+    .chat-suggestions{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 12px;}
+    .chat-suggestion{background:var(--surface3);border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:11.5px;color:var(--subtle);cursor:pointer;transition:all .15s;white-space:nowrap;}
+    .chat-suggestion:hover{border-color:var(--orange);color:var(--orange);}
+    .chat-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:12px;color:var(--muted);}
+    .chat-empty-icon{font-size:48px;opacity:.5;}
+    .chat-empty-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:2px;color:var(--subtle);}
+    .chat-empty-sub{font-size:12px;text-align:center;max-width:320px;line-height:1.6;}
+
     </style>
 </head>
 <body>
@@ -928,11 +966,17 @@ textarea{resize:vertical;min-height:68px;line-height:1.55;}
   <button class="nav-btn" id="nav-calendario" onclick="showSection('calendario')">📅 Calendario</button>
   <button class="nav-btn" id="nav-mis-tareas" data-roles="mecanico,supervisor" onclick="showSection('mis-tareas')">🔧 Mis Tareas <span class="nav-count" id="nc-mis-tareas">0</span></button>
   <button class="nav-btn" id="nav-mis-os" data-roles="solicitante" onclick="showSection('mis-os')">📋 Mis Solicitudes <span class="nav-count" id="nc-mis-os">0</span></button>
+  <button class="nav-btn" id="nav-agente" onclick="showSection('agente')">🤖 Agente</button>
   <button class="nav-btn reader-hide" data-perm="configuracion" onclick="showSection('config')">⚙ Configuración</button>
   <div id="user-bar">
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px;" id="user-badge-wrap">
       <span class="user-name" id="ub-nombre"></span>
       <span class="role-chip" id="ub-rol-chip"></span>
+    </div>
+    <button class="logout-btn" onclick="toggleHelpMenu(this)" title="Ayuda y entrenamiento" style="border-color:var(--border2);color:var(--muted);margin-right:2px;position:relative;">🎓 Ayuda</button>
+    <div id="help-menu" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:6px;min-width:200px;box-shadow:0 8px 24px rgba(0,0,0,.4);z-index:400;">
+      <button onclick="resetOnboarding();toggleHelpMenu()" style="width:100%;text-align:left;padding:8px 12px;border-radius:5px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">📖 Ver guía de inicio</button>
+      <button onclick="enterPracticeMode();toggleHelpMenu()" style="width:100%;text-align:left;padding:8px 12px;border-radius:5px;background:none;border:none;color:var(--text);font-size:12px;cursor:pointer;" onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'">🎓 Abrir OS de práctica</button>
     </div>
     <button class="logout-btn" onclick="logout()" title="Cerrar sesión">⏏ Salir</button>
   </div>
@@ -1352,6 +1396,44 @@ textarea{resize:vertical;min-height:68px;line-height:1.55;}
   <div id="mis-os-container"></div>
 </div>
 
+<!-- ── AGENTE ────────────────────────────────────────── -->
+<div class="section" id="sec-agente">
+  <div class="page-hdr">
+    <div>
+      <h1>🤖 A<span>GENTE</span> FLOTA</h1>
+      <p>Asistente de mantenimiento con acceso a datos en tiempo real · Responde en lenguaje natural</p>
+    </div>
+    <div class="page-hdr-actions">
+      <button class="btn btn-ghost" onclick="clearAgentChat()">🗑 Limpiar chat</button>
+    </div>
+  </div>
+
+  <div class="chat-wrap">
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-empty" id="chat-empty">
+        <div class="chat-empty-icon">🤖</div>
+        <div class="chat-empty-title">Asistente Nielsen</div>
+        <div class="chat-empty-sub">Preguntame sobre el estado de la flota, mantenimientos pendientes, problemas frecuentes o estadísticas.</div>
+      </div>
+    </div>
+
+    <div class="chat-suggestions" id="chat-suggestions">
+      <button class="chat-suggestion" onclick="sendSuggestion('¿Cuál es el estado actual de toda la flota?')">Estado de flota</button>
+      <button class="chat-suggestion" onclick="sendSuggestion('¿Qué mantenimientos están pendientes o vencidos?')">Pendientes</button>
+      <button class="chat-suggestion" onclick="sendSuggestion('¿Cuáles son los problemas más frecuentes en los vehículos?')">Problemas frecuentes</button>
+      <button class="chat-suggestion" onclick="sendSuggestion('Mostrame estadísticas de las últimas 4 semanas')">Estadísticas</button>
+      <button class="chat-suggestion" onclick="sendSuggestion('¿Qué vehículos están actualmente en mantenimiento?')">En mantenimiento</button>
+    </div>
+
+    <div class="chat-input-row">
+      <textarea class="chat-input" id="chat-input" placeholder="Preguntá algo sobre la flota..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAgentMessage();}"
+        oninput="this.style.height='44px';this.style.height=Math.min(this.scrollHeight,120)+'px'"></textarea>
+      <button class="chat-send-btn" id="chat-send-btn" onclick="sendAgentMessage()" title="Enviar">➤</button>
+    </div>
+  </div>
+</div>
+
 <div class="section" id="sec-config">
   <div class="page-hdr">
     <div>
@@ -1658,6 +1740,19 @@ function jsonOut(data) {
       <button class="modal-close" onclick="closeModal('modal-os')">✕</button>
     </div>
     <div class="modal-body">
+      <!-- Banner modo práctica -->
+      <div id="practice-banner" style="display:none;margin-bottom:12px;padding:11px 16px;
+        background:rgba(234,179,8,.12);border:2px solid rgba(234,179,8,.5);border-radius:8px;
+        display:none;align-items:center;gap:12px;font-size:12.5px;color:#eab308;">
+        <span style="font-size:22px;flex-shrink:0;">🎓</span>
+        <div style="flex:1;">
+          <strong>MODO PRÁCTICA</strong> — Esta OS no se guarda en el sistema real. Probá el flujo libremente.
+        </div>
+        <button class="btn btn-sm" onclick="exitPracticeMode()"
+          style="background:rgba(234,179,8,.2);border:1px solid rgba(234,179,8,.5);color:#eab308;font-size:11px;flex-shrink:0;">
+          Salir de práctica
+        </button>
+      </div>
       <div class="tabs">
         <div class="tab active" id="ostab-btn-0" onclick="switchOSTab(0)">📝 Solicitud</div>
         <div class="tab" id="ostab-btn-1" onclick="switchOSTab(1)">🔧 Ejecución</div>
@@ -1831,7 +1926,7 @@ function jsonOut(data) {
         </div>
         <div class="fg fg2" style="margin-bottom:8px;">
           <div class="ff">
-            <label>Fecha compromiso <span style="font-size:10px;color:var(--muted);font-weight:400;">(fecha que el taller se compromete a entregar)</span></label>
+            <label>Fecha compromiso <span style="font-size:10px;color:var(--muted);font-weight:400;">(fecha que el taller se compromete a entregar)</span><span class="tip-btn" onclick="showTip('fechaCompromiso',this)">ℹ</span></label>
             <input type="date" id="f-fecha-compromiso" onchange="checkFechaCompromisoWarning()">
           </div>
         </div>
@@ -1844,7 +1939,7 @@ function jsonOut(data) {
 
         <!-- Cronómetro -->
         <div id="os-timer-card" style="background:var(--bg2);border:1.5px solid var(--border);border-radius:12px;padding:22px 20px;text-align:center;margin-bottom:16px;">
-          <div style="font-size:10px;font-weight:700;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">⏱ Cronómetro de ejecución</div>
+          <div style="font-size:10px;font-weight:700;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;">⏱ Cronómetro de ejecución <span class="tip-btn" onclick="showTip('cronometro',this)">ℹ</span></div>
           <div id="os-timer-display" style="font-size:52px;font-weight:700;font-family:monospace;letter-spacing:4px;color:var(--text);margin:6px 0 10px;">00:00:00</div>
           <div id="os-timer-status" style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:4px;">Pendiente · Sin iniciar</div>
           <div id="os-timer-meta" style="font-size:11px;color:var(--muted);min-height:15px;"></div>
@@ -1856,7 +1951,7 @@ function jsonOut(data) {
 
         <!-- CHECKLIST — aparece solo cuando tipo = Preventivo o Predictivo -->
         <div id="f-checklist-section" style="display:none;">
-          <div class="form-sec" id="f-checklist-title">Check List · Mantenimiento Preventivo</div>
+          <div class="form-sec" id="f-checklist-title">Check List · Mantenimiento Preventivo <span class="tip-btn" onclick="showTip('checklist',this)">ℹ</span></div>
           <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:12px;">
             <button type="button" class="btn btn-ghost btn-sm" onclick="marcarTodo(true)">☑ Marcar todo</button>
             <button type="button" class="btn btn-ghost btn-sm" onclick="marcarTodo(false)">☐ Desmarcar todo</button>
@@ -1892,7 +1987,7 @@ function jsonOut(data) {
         <table class="mat-table" id="tareas-table">
           <thead>
             <tr>
-              <th>Descripción de la tarea</th>
+              <th>Descripción de la tarea <span class="tip-btn" onclick="showTip('tareas',this)">ℹ</span></th>
               <th width="155">Asignado a</th>
               <th width="155">Categoría</th>
               <th width="105">Estado</th>
@@ -2073,6 +2168,7 @@ function jsonOut(data) {
         <div class="tab" id="vtab-btn-1" onclick="switchVehTab(1)">🔧 Plan de Servicio</div>
         <div class="tab" id="vtab-btn-2" onclick="switchVehTab(2)">📂 Historial OS</div>
         <div class="tab" id="vtab-btn-3" onclick="switchVehTab(3)">📊 Odómetro</div>
+        <div class="tab" id="vtab-btn-4" onclick="switchVehTab(4)">🎯 Aptitud</div>
       </div>
 
       <!-- TAB 0 — DATOS DEL VEHÍCULO -->
@@ -2228,6 +2324,11 @@ function jsonOut(data) {
         </div>
         <!-- Tabla historial -->
         <div id="vd-km-historial"></div>
+      </div>
+    </div>
+      <!-- TAB 4 — APTITUD -->
+      <div id="vtab-4" style="display:none">
+        <div id="vd-aptitud-content"></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2633,6 +2734,8 @@ function showSection(id) {
     document.getElementById('nav-mis-os')?.classList.add('active');
   } else if (id === 'calendario') {
     document.getElementById('nav-calendario')?.classList.add('active');
+  } else if (id === 'agente') {
+    document.getElementById('nav-agente')?.classList.add('active');
   } else {
     document.querySelectorAll('.nav-btn')[map[id] ?? 2]?.classList.add('active');
   }
@@ -2641,6 +2744,11 @@ function showSection(id) {
   if (id === 'mis-os')     renderMisOS();
   if (id === 'calendario') renderCalendario();
   if (id !== 'mis-tareas') _stopAllMisTareasTimers();
+  // Onboarding task hooks
+  if (id === 'dashboard')   completeOnboardingTask('verDashboard');
+  if (id === 'mis-tareas')  completeOnboardingTask('verTareas');
+  if (id === 'mis-os')      completeOnboardingTask('verMisOS');
+  if (id === 'config')      completeOnboardingTask('verConfig');
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2847,10 +2955,23 @@ function buildVehCard(v) {
       </div>
       ${healthBadge}
     </div>
-    <div style="padding:6px 12px 10px;display:flex;align-items:center;justify-content:space-between;">
+    <div style="padding:6px 12px 10px;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;">
       <span class="veh-os-pill ${activeOS > 0 ? 'has-os' : ''}">
         ${activeOS > 0 ? activeOS + ' OS activa' + (activeOS > 1 ? 's' : '') : 'Sin OS activas'}
       </span>
+      ${(() => {
+        const apt = calcularAptitudVehiculo(v.id);
+        if (!apt.hasData) return v.aptitud_comentario
+          ? `<span style="font-size:10px;color:var(--muted);font-style:italic;" title="${escHtml(v.aptitud_comentario)}">⚪ Sin predictivo</span>`
+          : '';
+        return `<span style="display:inline-flex;align-items:center;gap:3px;
+          background:${apt.col}22;border:1px solid ${apt.col}55;
+          border-radius:4px;padding:1px 7px;font-size:10.5px;font-weight:700;color:${apt.col};cursor:pointer;"
+          title="Aptitud calculada · ${apt.osNum} · ${fmtDate(apt.fecha)}${v.aptitud_comentario ? '\n' + v.aptitud_comentario : ''}"
+          onclick="event.stopPropagation();showSection('flota');openVehModal('${v.id}');setTimeout(()=>switchVehTab(4),300)">
+          ${apt.icon} ${apt.pct}% — ${apt.label}
+        </span>`;
+      })()}
     </div>
   </div>`;
 }
@@ -2916,6 +3037,7 @@ function openNewVehicle() {
 }
 
 function openVehModal(id) {
+  completeOnboardingTask('verFlota');
   if (document.body.classList.contains('reader-mode')) return;
   // Asegurar que la foto este en cache antes de renderizar el header
   if (typeof photoDB !== "undefined" && photoDB && !vehPhotoCache.has(id)) {
@@ -3012,6 +3134,71 @@ function _openVehModalInner(id) {
   openModal('modal-veh');
 }
 
+function renderAptitudTab(vehId) {
+  const cont = document.getElementById('vd-aptitud-content');
+  if (!cont) return;
+  const v   = vehicles.find(x => x.id === vehId);
+  const apt = calcularAptitudVehiculo(vehId);
+  const rol = currentUser()?.rol || '';
+  const canEdit = ['admin','supervisor','flota'].includes(rol);
+
+  const scoreHtml = apt.hasData ? `
+    <div style="display:flex;align-items:center;gap:20px;padding:20px 0 16px;flex-wrap:wrap;">
+      <div style="text-align:center;min-width:100px;">
+        <div style="font-size:48px;font-weight:900;color:${apt.col};line-height:1;">${apt.pct}%</div>
+        <div style="font-size:13px;font-weight:700;color:${apt.col};margin-top:2px;">${apt.icon} ${apt.label}</div>
+      </div>
+      <div style="flex:1;min-width:180px;">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:4px;">Calculado desde <strong style="color:var(--text);">${escHtml(apt.osNum)}</strong> · ${fmtDate(apt.fecha)}</div>
+        <div style="font-size:11px;color:var(--muted);">≥ 80% Apto · 60–79% Observado · &lt; 60% No apto</div>
+        <div style="margin-top:8px;">
+          <div style="height:12px;background:var(--bg3);border-radius:6px;overflow:hidden;width:100%;max-width:260px;">
+            <div style="height:100%;border-radius:6px;background:${apt.col};width:${apt.pct}%;transition:width .4s;"></div>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:8px;font-size:11px;" onclick="editOS('${apt.osId}')">Ver OS predictiva →</button>
+      </div>
+    </div>
+    <div style="margin-bottom:16px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;">Detalle por categoría</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
+        ${Object.entries(apt.breakdown).sort((a,b) => (BRM_PESOS[b[0]]||2)-(BRM_PESOS[a[0]]||2)).map(([cat, d]) => {
+          const avg = Math.round(d.sum / d.items);
+          const c   = avg >= 80 ? 'var(--green)' : avg >= 50 ? 'var(--warn)' : 'var(--danger)';
+          return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 10px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">
+              <span style="font-size:11px;color:var(--text);">${escHtml(cat)}</span>
+              <span style="font-size:11px;font-weight:700;color:${c};white-space:nowrap;">${avg}%</span>
+            </div>
+            <div style="font-size:9.5px;color:var(--muted);margin-top:2px;">peso ${BRM_PESOS[cat]||2} · ${d.items} ítem${d.items>1?'s':''}</div>
+            <div style="height:3px;background:var(--bg3);border-radius:2px;margin-top:4px;overflow:hidden;">
+              <div style="height:100%;background:${c};width:${avg}%;border-radius:2px;"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>` : `
+    <div class="empty" style="padding:32px 0;">
+      <div class="empty-icon">🎯</div>
+      <div class="empty-title">Sin datos de aptitud</div>
+      <div class="empty-desc">Completá una OS Predictiva para este vehículo para calcular el % de aptitud ponderado.</div>
+    </div>`;
+
+  cont.innerHTML = `
+    ${scoreHtml}
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin-top:4px;">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;">Comentario del supervisor</div>
+      ${canEdit
+        ? `<textarea id="vf-aptitud-comentario" rows="3"
+            style="width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-size:12px;color:var(--text);resize:vertical;"
+            placeholder="Observaciones sobre el estado general del vehículo, condiciones de operación, restricciones, etc."
+            >${escHtml(v?.aptitud_comentario || '')}</textarea>
+           <div style="font-size:10px;color:var(--muted);margin-top:4px;">Guardado al hacer clic en "💾 Guardar cambios"</div>`
+        : `<div style="font-size:12px;color:var(--text);padding:4px 0;">${v?.aptitud_comentario ? escHtml(v.aptitud_comentario) : '<span style="color:var(--muted);font-style:italic;">Sin comentario</span>'}</div>`
+      }
+    </div>`;
+}
+
 function renderVehOSList(vehId) {
   const container = document.getElementById('vd-os-list');
   const osv = ordenes.filter(o => o.vehiculo_id === vehId).sort((a,b) => b.fecha_pedido.localeCompare(a.fecha_pedido));
@@ -3097,8 +3284,9 @@ function saveVehicle() {
     estado_manual: g('vf-estado'),
     activo: g('vf-activo') === 'true',
     notas: g('vf-notas'),
-    rto_vencimiento:    g('vf-rto-vencimiento')    || null,
-    seguro_vencimiento: g('vf-seguro-vencimiento') || null,
+    rto_vencimiento:     g('vf-rto-vencimiento')     || null,
+    seguro_vencimiento:  g('vf-seguro-vencimiento')  || null,
+    aptitud_comentario:  document.getElementById('vf-aptitud-comentario')?.value || vehicles[i].aptitud_comentario || null,
   };
 
   saveVehiclesLocal();
@@ -3111,7 +3299,7 @@ function saveVehicle() {
 }
 
 function switchVehTab(n) {
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < 5; i++) {
     const panel = document.getElementById('vtab-'+i);
     const btn   = document.getElementById('vtab-btn-'+i);
     if (panel) panel.style.display = i === n ? '' : 'none';
@@ -3120,6 +3308,7 @@ function switchVehTab(n) {
   currentVehTab = n;
   if (n === 2 && editingVehId) renderVehOSList(editingVehId);
   if (n === 3 && editingVehId) renderKmHistorial(editingVehId);
+  if (n === 4 && editingVehId) { renderAptitudTab(editingVehId); completeOnboardingTask('verAptitud'); }
 }
 
 // ── Odómetro ─────────────────────────────────────────────────
@@ -3302,6 +3491,7 @@ async function syncVehicles() {
 }
 
 async function pushOS(os) {
+  if (os?.is_training) return true; // modo práctica — no persiste
   try {
     const { error } = await SB.from('ordenes_servicio').upsert(osToSB(os), { onConflict: 'id' });
     if (error) { console.error('pushOS error:', error); return false; }
@@ -3369,6 +3559,7 @@ function vehToSB(v) {
     rto_vencimiento:      dateOrNull(v.rto_vencimiento),
     seguro_vencimiento:   dateOrNull(v.seguro_vencimiento),
     km_historial:         v.km_historial || '[]',
+    aptitud_comentario:   v.aptitud_comentario || null,
   };
 }
 
@@ -3994,6 +4185,7 @@ function agregarEjecutante() {
   const sel = document.getElementById('f-ejec-select');
   const nombre = sel?.value;
   if (!nombre) return;
+  completeOnboardingTask('asignarTarea');
   const list = _getEjecutantesList();
   if (!list.includes(nombre)) {
     list.push(nombre);
@@ -4196,6 +4388,11 @@ function editOS(id) {
     lockSolicitudTab(true);
     loadOSFotosForm(id);
   }, 100);
+  // Banner modo práctica
+  const pracBanner = document.getElementById('practice-banner');
+  if (pracBanner) pracBanner.style.display = os.is_training ? 'flex' : 'none';
+
+  completeOnboardingTask('abrirOS');
   switchOSTab(1);
   closeModal('modal-detail');
   openModal('modal-os');
@@ -4880,6 +5077,7 @@ function iniciarTarea(btn, id) {
   if (!os || os.estado !== 'En ejecución') {
     alert('La OS debe estar "En ejecución" para iniciar tareas individuales.'); return;
   }
+  completeOnboardingTask('iniciarTarea');
 
   // Bloqueo: revisión mecánica requiere lavado completado
   const desc = (tr.querySelector('input[type=text]')?.value || '').toLowerCase();
@@ -6081,6 +6279,61 @@ function crearOSPreventiva(vehId, desc, urgente) {
 // ════════════════════════════════════════════════════════════
 // INDICADORES DE GESTIÓN DE MANTENIMIENTO
 // ════════════════════════════════════════════════════════════
+
+const BRM_PESOS = {
+  'Motor y Mecánica':               5,
+  'Frenos':                         5,
+  'Dirección y Suspensión':         5,
+  'Sistema de Refrigeración':       4,
+  'Estructura y Chasis':            4,
+  'Batería y Sistema Eléctrico':    3,
+  'Ruedas y Neumáticos':            3,
+  'Otros y Lubricantes':            3,
+  'Vidrios, Cierres y Burletes':    2,
+  'Luces y Señalización':           2,
+  'Interior — Eléctrico y Confort': 2,
+  'Interior — Cabina':              2,
+  'Interior — Tapizado y Seguridad':1,
+  'Carrocería y Pintura':           1,
+};
+
+function calcularAptitudVehiculo(vehId) {
+  const predOS = ordenes
+    .filter(o => o.vehiculo_id === vehId && o.tipo === 'Predictivo'
+             && ['Finalizada','Aprobada'].includes(o.estado) && o.checklist)
+    .sort((a,b) => (b.fecha_fin||b.fecha_pedido).localeCompare(a.fecha_fin||a.fecha_pedido))[0];
+  if (!predOS) return { hasData: false };
+
+  let data;
+  try { data = JSON.parse(predOS.checklist); } catch(e) { return { hasData: false }; }
+
+  const brmItems = (data.items || []).filter(i => i.type === 'brm' && i.brm);
+  if (!brmItems.length) return { hasData: false };
+
+  const BRM_SCORE = { B: 100, R: 50, M: 0 };
+  let sumPeso = 0, sumScore = 0;
+  const breakdown = {};
+
+  brmItems.forEach(item => {
+    const peso  = BRM_PESOS[item.cat] || 2;
+    const score = BRM_SCORE[item.brm];
+    if (score === undefined) return;
+    sumPeso  += peso;
+    sumScore += score * peso;
+    if (!breakdown[item.cat]) breakdown[item.cat] = { items: 0, sum: 0, peso };
+    breakdown[item.cat].items++;
+    breakdown[item.cat].sum += score;
+  });
+
+  if (!sumPeso) return { hasData: false };
+
+  const pct   = Math.round(sumScore / sumPeso);
+  const label = pct >= 80 ? 'Apto' : pct >= 60 ? 'Observado' : 'No apto';
+  const col   = pct >= 80 ? 'var(--green)' : pct >= 60 ? 'var(--warn)' : 'var(--danger)';
+  const icon  = pct >= 80 ? '🟢' : pct >= 60 ? '🟡' : '🔴';
+  return { hasData: true, pct, label, col, icon, fecha: predOS.fecha_fin || predOS.fecha_pedido,
+           osId: predOS.id, osNum: predOS.numero, breakdown };
+}
 
 function getVehHealthScore(veh) {
   let score = 100;
@@ -9740,7 +9993,7 @@ function getChecklistPlan(modelo, vehId) {
   function renderChecklistItemsPred(items, container, readOnly=false, savedChecklist=null) {
     const processed = items.map((item, idx) => {
       const saved = savedChecklist?.find(s => s.idx === idx);
-      return { ...item, idx, checked: saved?.checked||false, brm: saved?.brm||'', obs: saved?.obs||'' };
+      return { ...item, idx, checked: saved?.checked||false, brm: saved?.brm||'', obs: saved?.obs||'', valor: saved?.valor||'' };
     });
 
     const e1 = processed.filter(i => i.etapa === 1);
@@ -9806,14 +10059,17 @@ function getChecklistPlan(modelo, vehId) {
                         : bv==='R'?'<span style="color:#fb923c;font-weight:700;">⚠ REGULAR</span>'
                         : bv==='M'?'<span style="color:#f87171;font-weight:700;">✗ MALO</span>'
                         : '<span style="color:var(--muted);">— Sin evaluar</span>';
+            const _brmPSI = /presión|presion|inflado/i.test(item.desc);
               return `<div class="checklist-item" style="opacity:${bv?'1':'0.5'};">
                 <div style="flex:1;display:flex;justify-content:space-between;align-items:center;gap:8px;">
                   <span style="font-size:12px;"><span style="color:var(--muted);font-size:10px;margin-right:4px;">${item.n}.</span>${escHtml(item.desc)}</span>
                   <span style="white-space:nowrap;">${lbl}</span>
                 </div>
+                ${item.valor && _brmPSI ? `<div style="font-size:10.5px;color:var(--acc);margin-top:2px;width:100%;">📏 ${escHtml(item.valor)} PSI</div>` : ''}
                 ${item.obs?`<div style="font-size:10.5px;color:var(--muted);margin-top:2px;width:100%;">✏ ${escHtml(item.obs)}</div>`:''}
               </div>`;
             }
+            const _brmPSI = /presión|presion|inflado/i.test(item.desc);
             const btnStyle = (val, activeColor, activeBg) =>
               `padding:3px 10px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;` +
               `border:2px solid ${bv===val?activeColor:'#374151'};` +
@@ -9832,6 +10088,13 @@ function getChecklistPlan(modelo, vehId) {
                 <button type="button" data-idx="${item.idx}" data-brm="M" onclick="setBRM(this)"
                   style="${btnStyle('M','#f87171','rgba(248,113,113,.18)')}">M</button>
               </div>
+              ${_brmPSI ? `<div style="display:flex;align-items:center;gap:6px;width:100%;">
+                <input type="number" data-valor="${item.idx}" placeholder="PSI calibrado"
+                  value="${escHtml(item.valor||'')}"
+                  style="width:110px;font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 7px;color:var(--text);"
+                  oninput="updateChecklistProgress()">
+                <span style="font-size:11px;color:var(--muted);">PSI</span>
+              </div>` : ''}
               <input type="text" data-obs="${item.idx}" placeholder="Observación…"
                 value="${escHtml(item.obs||'')}"
                 style="width:100%;font-size:11px;background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:3px 7px;color:var(--text);"
@@ -9872,7 +10135,7 @@ function getChecklistPlan(modelo, vehId) {
       </div>
       ${stageHeader(1,'LAVADO','rgba(96,165,250,.1)','#60a5fa','🫧')}
       <div class="checklist-group">${renderCheckItems(e1)}</div>
-      ${stageHeader(2,'REVISIÓN MECÁNICA Y ELÉCTRICA','rgba(167,139,250,.1)','#a78bfa','🔧')}
+      ${stageHeader(2,'REVISIÓN MECÁNICA Y ELÉCTRICA <span class="tip-btn" onclick="showTip(\'brm\',this)">ℹ</span>','rgba(167,139,250,.1)','#a78bfa','🔧')}
       ${renderBRMItems(e2)}
       ${stageHeader(3,'REVISIÓN DE EQUIPAMIENTO MINERO','rgba(249,115,22,.1)','#f97316','⛏')}
       <div class="checklist-group">${renderCheckItems(e3)}</div>`;
@@ -9910,7 +10173,7 @@ function renderChecklistItems(items, container, readOnly=false, savedChecklist=n
   items.forEach((item, idx) => {
     if (!groups[item.cat]) groups[item.cat] = [];
     const saved = savedChecklist?.find(s => s.idx === idx);
-    groups[item.cat].push({...item, idx, checked: saved?.checked || false, obs: saved?.obs || ''});
+    groups[item.cat].push({...item, idx, checked: saved?.checked || false, obs: saved?.obs || '', valor: saved?.valor || ''});
   });
 
   const catIcons = {
@@ -9930,6 +10193,9 @@ function renderChecklistItems(items, container, readOnly=false, savedChecklist=n
       ${catItems.map(item => {
         const cbId = 'chk-' + item.idx;
         if (readOnly) {
+          const _esPSI    = /presión|presion|inflado/i.test(item.desc);
+          const _esTorque = /torque/i.test(item.desc);
+          const _unidad   = _esPSI ? 'PSI' : _esTorque ? 'Kgf.m' : '';
           return `<div class="detail-checklist-item">
             <span class="detail-check-icon">${item.checked ? '✅' : '⬜'}</span>
             <div>
@@ -9937,10 +10203,13 @@ function renderChecklistItems(items, container, readOnly=false, savedChecklist=n
                 ${item.oblig ? '<span class="checklist-tag tag-oblig">Obligatorio</span>' : '<span class="checklist-tag tag-rec">Recomendado</span>'}
               </div>
               ${item.note ? `<div class="detail-check-obs">${escHtml(item.note||item.nota||'')}</div>` : ''}
+              ${item.valor && _unidad ? `<div class="detail-check-obs" style="color:var(--acc);">📏 ${escHtml(item.valor)} ${_unidad}</div>` : ''}
               ${item.obs ? `<div class="detail-check-obs" style="color:var(--orange2);">✏ ${escHtml(item.obs)}</div>` : ''}
             </div>
           </div>`;
         }
+        const esPSI    = /presión|presion|inflado/i.test(item.desc);
+        const esTorque = /torque/i.test(item.desc);
         return `<div class="checklist-item" onclick="document.getElementById('${cbId}').click()">
           <input type="checkbox" id="${cbId}" ${item.checked?'checked':''} data-idx="${item.idx}" data-cat="${item.cat}"
             onclick="event.stopPropagation();if(checkLavadoGate(this))updateChecklistProgress();else this.checked=false;">
@@ -9949,6 +10218,18 @@ function renderChecklistItems(items, container, readOnly=false, savedChecklist=n
               ${item.oblig ? '<span class="checklist-tag tag-oblig">Obligatorio</span>' : '<span class="checklist-tag tag-rec">Recomendado</span>'}
             </div>
             ${(item.nota||item.note) ? `<div class="checklist-item-note">📌 ${escHtml(item.nota||item.note||'')}</div>` : ''}
+            ${esPSI ? `<div class="checklist-item-obs" style="display:flex;align-items:center;gap:6px;">
+              <input type="number" placeholder="PSI calibrado" value="${escHtml(item.valor||'')}"
+                onclick="event.stopPropagation()" data-valor="${item.idx}"
+                style="width:110px;" min="0" step="1">
+              <span style="font-size:11px;color:var(--muted);">PSI</span>
+            </div>` : ''}
+            ${esTorque ? `<div class="checklist-item-obs" style="display:flex;align-items:center;gap:6px;">
+              <input type="number" placeholder="Kgf.m" value="${escHtml(item.valor||'')}"
+                onclick="event.stopPropagation()" data-valor="${item.idx}"
+                style="width:110px;" min="0" step="0.1">
+              <span style="font-size:11px;color:var(--muted);">Kgf.m</span>
+            </div>` : ''}
             <div class="checklist-item-obs">
               <input type="text" placeholder="Observación (opcional)" value="${escHtml(item.obs||'')}"
                 onclick="event.stopPropagation()" data-obs="${item.idx}">
@@ -10033,6 +10314,7 @@ function setBRM(btn) {
 function updateChecklistProgress() {
   const cont = document.getElementById('f-checklist-container');
   if (!cont) return;
+  completeOnboardingTask('checkItem');
 
   const predBtns  = cont.querySelectorAll('button[data-brm]');
   const checkboxes = cont.querySelectorAll('input[type=checkbox][data-idx]');
@@ -10110,12 +10392,14 @@ function getChecklistData() {
         const obsEl = cont2 ? cont2.querySelector(`input[data-obs="${idx}"]`) : null;
         const cb    = cont2 ? cont2.querySelector(`input[type=checkbox][data-idx="${idx}"]`) : null;
         const brm   = brmMap[String(idx)] || '';
+        const valorEl = cont2 ? cont2.querySelector(`input[data-valor="${idx}"]`) : null;
         return {
           idx, etapa: item.etapa, type: item.type,
           n: item.n || null, desc: item.desc, cat: item.cat,
           brm,
           checked: item.type === 'check' ? (cb ? cb.checked : false) : (brm !== ''),
-          obs: obsEl?.value || ''
+          obs: obsEl?.value || '',
+          valor: valorEl?.value || ''
         };
       })
     };
@@ -10131,7 +10415,8 @@ function getChecklistData() {
         const idx = parseInt(cb.dataset.idx);
         const obsEl = document.querySelector(`input[data-obs="${idx}"]`);
         return { idx, desc: CHECKLIST_CORR[idx]?.desc||'', cat: CHECKLIST_CORR[idx]?.cat||'',
-                 oblig: CHECKLIST_CORR[idx]?.oblig||false, checked: cb.checked, obs: obsEl?.value||'' };
+                 oblig: CHECKLIST_CORR[idx]?.oblig||false, checked: cb.checked, obs: obsEl?.value||'',
+                 valor: document.querySelector(`input[data-valor="${idx}"]`)?.value||'' };
       })
     };
     return JSON.stringify(data);
@@ -10146,7 +10431,8 @@ function getChecklistData() {
         const idx = parseInt(cb.dataset.idx);
         const obsEl = document.querySelector(`input[data-obs="${idx}"]`);
         return { idx, desc: CHECKLIST_EXP[idx]?.desc||'', cat: CHECKLIST_EXP[idx]?.cat||'',
-                 oblig: CHECKLIST_EXP[idx]?.oblig||false, checked: cb.checked, obs: obsEl?.value||'' };
+                 oblig: CHECKLIST_EXP[idx]?.oblig||false, checked: cb.checked, obs: obsEl?.value||'',
+                 valor: document.querySelector(`input[data-valor="${idx}"]`)?.value||'' };
       })
     };
     return JSON.stringify(data);
@@ -10169,7 +10455,8 @@ function getChecklistData() {
         cat:  items[idx]?.cat  || '',
         oblig:items[idx]?.oblig || false,
         checked: cb.checked,
-        obs: obsEl?.value || ''
+        obs: obsEl?.value || '',
+        valor: document.querySelector(`input[data-valor="${idx}"]`)?.value||''
       };
     })
   };
@@ -10719,7 +11006,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
       }
       // Cerrar el modal abierto de mayor prioridad
-      const modales = ['modal-os','modal-conformidad','modal-veh','modal-taller','modal-detail','modal-usuarios'];
+      const modales = ['modal-os','modal-conformidad','modal-veh','modal-taller','modal-detail','modal-usuarios','modal-onboarding'];
       for (const id of modales) {
         const el = document.getElementById(id);
         if (el && el.classList.contains('open')) {
@@ -11023,6 +11310,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (rol === 'solicitante') { showSection('mis-os'); }
     else if (rol === 'mecanico') { showSection('mis-tareas'); }
     else { showSection('dashboard'); }
+    const u = currentUser();
+    if (u) {
+      setTimeout(() => showOnboarding(rol, u.id), 600);
+      setTimeout(() => initOnboardingWidget(u.id, rol), 800);
+    }
   }
 
   function updateUserBadge(userOrSession) {
@@ -11473,6 +11765,516 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CHECKLIST DE ONBOARDING — primeros pasos por rol
+// ═══════════════════════════════════════════════════════════════════════════
+const ONBOARDING_TASKS = {
+  mecanico: [
+    { key:'verTareas',    label:'Abrir "Mis Tareas"'                },
+    { key:'abrirOS',      label:'Abrir una orden de servicio'        },
+    { key:'iniciarTarea', label:'Iniciar una tarea con el ▶ play'   },
+    { key:'checkItem',    label:'Marcar un ítem del checklist'       },
+    { key:'practica',     label:'Usar el modo práctica'              },
+  ],
+  supervisor: [
+    { key:'verDashboard', label:'Ver el Dashboard'                   },
+    { key:'abrirOS',      label:'Abrir una orden de servicio'        },
+    { key:'asignarTarea', label:'Asignar una tarea a un mecánico'   },
+    { key:'verAptitud',   label:'Ver la pestaña Aptitud de un vehículo' },
+    { key:'practica',     label:'Usar el modo práctica'              },
+  ],
+  flota: [
+    { key:'verDashboard', label:'Ver el Dashboard'                   },
+    { key:'verFlota',     label:'Abrir un vehículo en Flota'         },
+    { key:'abrirOS',      label:'Abrir una orden de servicio'        },
+    { key:'practica',     label:'Usar el modo práctica'              },
+  ],
+  admin: [
+    { key:'verDashboard', label:'Ver el Dashboard'                   },
+    { key:'verFlota',     label:'Abrir un vehículo en Flota'         },
+    { key:'abrirOS',      label:'Abrir una orden de servicio'        },
+    { key:'verConfig',    label:'Visitar Configuración'              },
+    { key:'practica',     label:'Usar el modo práctica'              },
+  ],
+  solicitante: [
+    { key:'verMisOS',     label:'Abrir "Mis Solicitudes"'            },
+    { key:'abrirOS',      label:'Ver el detalle de una solicitud'    },
+    { key:'practica',     label:'Usar el modo práctica'              },
+  ],
+};
+
+function _obKey(userId) { return 'nielsen_obt_' + userId; }
+
+function getOnboardingTasks(userId, rol) {
+  const tasks = (ONBOARDING_TASKS[rol] || []).map(t => ({ ...t }));
+  try {
+    const done = JSON.parse(localStorage.getItem(_obKey(userId)) || '{}');
+    tasks.forEach(t => { t.done = !!done[t.key]; });
+  } catch(e) {}
+  return tasks;
+}
+
+function completeOnboardingTask(key) {
+  const u = currentUser();
+  if (!u) return;
+  const rol   = u.rol;
+  const tasks = ONBOARDING_TASKS[rol];
+  if (!tasks?.find(t => t.key === key)) return;
+  const stored = (() => { try { return JSON.parse(localStorage.getItem(_obKey(u.id)) || '{}'); } catch(e) { return {}; } })();
+  if (stored[key]) return; // ya estaba
+  stored[key] = true;
+  localStorage.setItem(_obKey(u.id), JSON.stringify(stored));
+  _updateObWidget(u.id, rol);
+}
+
+function _updateObWidget(userId, rol) {
+  const widget = document.getElementById('ob-widget');
+  if (!widget) return;
+  const tasks = getOnboardingTasks(userId, rol);
+  const done  = tasks.filter(t => t.done).length;
+  const total = tasks.length;
+  const allDone = done === total;
+
+  // Ocultar widget si el onboarding principal ya fue visto Y todo está hecho
+  const obSeen = localStorage.getItem('nielsen_ob_' + userId);
+  if (allDone && obSeen) { widget.style.display = 'none'; return; }
+  widget.style.display = 'flex';
+
+  const pill = document.getElementById('ob-widget-pill');
+  const panel = document.getElementById('ob-widget-panel');
+  if (pill) {
+    pill.textContent = allDone ? '✅ ¡Listo!' : `🎓 ${done}/${total} primeros pasos`;
+    pill.style.background = allDone ? 'rgba(74,222,128,.15)' : 'rgba(96,165,250,.12)';
+    pill.style.borderColor = allDone ? 'rgba(74,222,128,.4)' : 'rgba(96,165,250,.3)';
+    pill.style.color       = allDone ? '#4ade80' : '#60a5fa';
+  }
+  if (panel) {
+    panel.innerHTML = `
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;">
+        Primeros pasos — ${done}/${total} completados
+      </div>
+      ${tasks.map(t => `
+        <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;">
+          <span style="font-size:15px;flex-shrink:0;">${t.done ? '✅' : '⭕'}</span>
+          <span style="color:${t.done ? 'var(--muted)' : 'var(--text)'};text-decoration:${t.done ? 'line-through' : 'none'};">${t.label}</span>
+        </div>`).join('')}
+      ${allDone ? `<div style="margin-top:12px;padding:8px;background:rgba(74,222,128,.1);border-radius:6px;font-size:12px;color:#4ade80;text-align:center;font-weight:700;">¡Completaste todos los primeros pasos! 🎉</div>` : ''}
+      <button onclick="document.getElementById('ob-widget-panel').style.display='none'"
+        style="margin-top:8px;width:100%;padding:5px;background:none;border:1px solid var(--border);border-radius:5px;color:var(--muted);font-size:11px;cursor:pointer;">
+        Cerrar
+      </button>`;
+  }
+}
+
+function initOnboardingWidget(userId, rol) {
+  // Crear widget si no existe
+  if (!document.getElementById('ob-widget')) {
+    const w = document.createElement('div');
+    w.id = 'ob-widget';
+    w.style.cssText = 'position:fixed;bottom:20px;right:20px;z-index:350;display:flex;flex-direction:column;align-items:flex-end;gap:6px;';
+    w.innerHTML = `
+      <div id="ob-widget-panel" style="display:none;background:var(--surface);border:1px solid var(--border);
+        border-radius:10px;padding:14px 16px;width:260px;box-shadow:0 8px 24px rgba(0,0,0,.4);">
+      </div>
+      <div id="ob-widget-pill" onclick="toggleObPanel()" style="cursor:pointer;padding:6px 12px;
+        border-radius:20px;border:1px solid;font-size:11.5px;font-weight:700;
+        box-shadow:0 4px 12px rgba(0,0,0,.3);user-select:none;white-space:nowrap;">
+      </div>`;
+    document.body.appendChild(w);
+  }
+  _updateObWidget(userId, rol);
+}
+
+function toggleObPanel() {
+  const panel = document.getElementById('ob-widget-panel');
+  if (!panel) return;
+  panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+  if (panel.style.display === 'block') {
+    const u = currentUser();
+    if (u) _updateObWidget(u.id, u.rol);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// MODO PRÁCTICA
+// ═══════════════════════════════════════════════════════════════════════════
+const TRAINING_OS_ID = 'OS_TRAINING_DEMO';
+
+function buildTrainingOS() {
+  const hoy = new Date().toISOString().split('T')[0];
+  const veh = vehicles[0]; // usar primer vehículo real para que los lookups funcionen
+  return {
+    id: TRAINING_OS_ID,
+    is_training: true,
+    numero: 'OS-PRÁCTICA',
+    fecha_pedido: hoy,
+    tipo: 'Correctivo',
+    vehiculo_id: veh?.id || '',
+    vehiculo_label: (veh ? '[' + (veh.interno||'') + '] ' + veh.modelo : '') + ' (ENTRENAMIENTO)',
+    solicitante: 'Usuario de entrenamiento',
+    area_solicitante: 'Taller',
+    prioridad: 'Normal',
+    estado: 'Pendiente',
+    desc_trabajo: 'OS de práctica — probá el sistema sin afectar datos reales. Iniciá el trabajo, asigná tareas, completá el checklist y finalizá.',
+    tareas: JSON.stringify([
+      { id:'t1', desc:'Lavado exterior del vehículo', asignado:'', estado:'Pendiente', tsInicio:'', tsFin:'', obs:'' },
+      { id:'t2', desc:'Revisión mecánica general',    asignado:'', estado:'Pendiente', tsInicio:'', tsFin:'', obs:'' },
+    ]),
+    checklist: null, checklist_nivel: null, historial: '[]',
+    fecha_compromiso: null, ejecutantes: '', timestamp_inicio: null,
+    timestamp_fin: null, fecha_inicio: null, fecha_fin: null,
+    duracion_hs: null, km_actuales: null, km_cierre: null,
+    trabajo_realizado:'', observaciones:'', materiales:'', mano_obra:'',
+    obs_final:'', tecnico:'', componente:'', causa_raiz:'',
+    aprobado_por:'', aprobado_rol:'', fecha_aprobacion:'', conformidad_obs:'',
+    proximo_servicio: null, plazo: 5, plazo_horas: null, plazo_unidad:'días',
+    fecha_vencimiento: null, area_destino:'Taller', responsable:'',
+  };
+}
+
+function enterPracticeMode() {
+  completeOnboardingTask('practica');
+  // Eliminar instancia previa si existe
+  ordenes = ordenes.filter(o => o.id !== TRAINING_OS_ID);
+  const trainingOS = buildTrainingOS();
+  ordenes.unshift(trainingOS);
+  closeOnboarding();
+  setTimeout(() => {
+    showSection('ordenes');
+    setTimeout(() => editOS(TRAINING_OS_ID), 300);
+  }, 200);
+}
+
+function exitPracticeMode() {
+  ordenes = ordenes.filter(o => o.id !== TRAINING_OS_ID);
+  const banner = document.getElementById('practice-banner');
+  if (banner) banner.style.display = 'none';
+  closeModal('modal-os');
+  renderOrdenes?.();
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TOOLTIPS CONTEXTUALES
+// ═══════════════════════════════════════════════════════════════════════════
+const TIPS = {
+  cronometro: {
+    title: '⏱ Cronómetro de ejecución',
+    body:  'Mide cuánto tiempo estuvo el vehículo en el taller — no al mecánico. Si tienen que atender otra urgencia, el cronómetro sigue corriendo y eso queda en el historial. Eso protege al mecánico: el registro muestra que la demora fue por una interrupción, no por falta de trabajo.'
+  },
+  checklist: {
+    title: '☑ Lista de verificación',
+    body:  'Marcá cada ítem a medida que lo completás. <strong>El lavado siempre va primero</strong> — no podés avanzar con la revisión mecánica si no está marcado. Los ítems en naranja son obligatorios para cerrar la OS. Los campos de PSI y Kgf.m registran los valores calibrados.'
+  },
+  brm: {
+    title: '🔍 Calificación B / R / M',
+    body:  '<strong style="color:#4ade80">B — Bueno:</strong> en perfecto estado.<br><strong style="color:#fb923c">R — Regular:</strong> funciona pero requiere atención próxima.<br><strong style="color:#f87171">M — Malo:</strong> requiere reparación urgente.<br><br>Estas calificaciones determinan automáticamente el <strong>% de aptitud</strong> del vehículo, con mayor peso en motor, frenos y dirección.'
+  },
+  tareas: {
+    title: '📋 Tareas del trabajo',
+    body:  'Cada tarea es una intervención específica. Asigná un mecánico por tarea. Si alguien necesita dejar una tarea para atender una urgencia, puede hacerlo — el cambio queda registrado. <strong>La revisión mecánica no puede iniciarse hasta que el lavado esté completado.</strong>'
+  },
+  fechaCompromiso: {
+    title: '📅 Fecha compromiso',
+    body:  'Es la fecha en que el taller se compromete a entregar el vehículo — diferente a la fecha requerida por el solicitante. Si no podés cumplirla, actualizala antes del vencimiento para que quede registrado el motivo y no impacte en los indicadores de cumplimiento.'
+  },
+};
+
+let _tipTimeout = null;
+
+function showTip(key, el) {
+  const tip = TIPS[key];
+  if (!tip) return;
+  event?.stopPropagation();
+  let card = document.getElementById('tip-card');
+  if (!card) {
+    card = document.createElement('div');
+    card.id = 'tip-card';
+    card.innerHTML = `<span id="tip-card-close" onclick="closeTip()">✕</span><div id="tip-card-title"></div><div id="tip-card-body"></div>`;
+    document.body.appendChild(card);
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#tip-card') && !e.target.classList.contains('tip-btn')) closeTip();
+    });
+  }
+  document.getElementById('tip-card-title').textContent = tip.title;
+  document.getElementById('tip-card-body').innerHTML    = tip.body;
+  card.style.display = 'block';
+
+  const rect  = el.getBoundingClientRect();
+  const cardW = 300;
+  let left = rect.left + rect.width / 2 - cardW / 2;
+  left = Math.max(10, Math.min(left, window.innerWidth - cardW - 10));
+  let top = rect.bottom + 10;
+  if (top + 200 > window.innerHeight) top = rect.top - 210;
+  card.style.left = left + 'px';
+  card.style.top  = top  + 'px';
+
+  clearTimeout(_tipTimeout);
+  _tipTimeout = setTimeout(closeTip, 9000);
+}
+
+function closeTip() {
+  const card = document.getElementById('tip-card');
+  if (card) card.style.display = 'none';
+  clearTimeout(_tipTimeout);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ONBOARDING — Guía de inicio por rol
+// ═══════════════════════════════════════════════════════════════════════════
+const ONBOARDING_STEPS = {
+  mecanico: [
+    { icon:'🔧', title:'Bienvenido al sistema',
+      desc:'Esta es tu sección de trabajo. Acá vas a encontrar todas las tareas que el supervisor te asignó.',
+      tip:'👉 Andá a <strong>Mis Tareas</strong> en el menú superior para ver tus asignaciones.' },
+    { icon:'▶',  title:'Iniciar una tarea',
+      desc:'Cuando empieces a trabajar en una tarea, tocá el botón <strong>▶ Iniciar</strong>. Esto registra que arrancaste.',
+      tip:'⚠ Solo podés iniciar tareas en OS que estén "En ejecución".' },
+    { icon:'☑',  title:'Completar el checklist',
+      desc:'Cada OS tiene una lista de verificación. Marcá cada ítem a medida que lo completás. El lavado del vehículo va siempre primero.',
+      tip:'📌 No podés avanzar con la revisión mecánica si el lavado no está marcado.' },
+    { icon:'🎓', title:'¡Practicá sin riesgo!',
+      desc:'Antes de operar con datos reales, podés probar el sistema completo en modo práctica. Todo lo que hagas ahí no se guarda.',
+      tip:'<button onclick="enterPracticeMode()" style="background:rgba(234,179,8,.2);border:1px solid rgba(234,179,8,.5);color:#eab308;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;">🎓 Abrir OS de práctica</button>' },
+  ],
+  supervisor: [
+    { icon:'📊', title:'Tu panel de control',
+      desc:'El Dashboard muestra el estado de toda la flota en tiempo real: vehículos operativos, OS activas y alertas pendientes.',
+      tip:'👉 Empezá siempre por el <strong>Dashboard</strong> para tener el panorama general.' },
+    { icon:'📋', title:'Crear y asignar OS',
+      desc:'Desde <strong>Todas las OS</strong> podés crear nuevas órdenes, asignar mecánicos y establecer fechas de compromiso.',
+      tip:'💡 Podés planificar la OS en estado Pendiente antes de ponerla En ejecución.' },
+    { icon:'👁',  title:'Seguir el avance',
+      desc:'Desde cada OS ves en tiempo real qué tareas están en curso, quién las hace y cuánto tiempo llevan.',
+      tip:'⚠ Los mecánicos no pueden iniciar revisión mecánica sin antes completar el lavado.' },
+    { icon:'🎓', title:'¡Practicá sin riesgo!',
+      desc:'Antes de operar con datos reales, podés probar el sistema completo. Abrí una OS de práctica y recorrés el flujo completo sin guardar nada.',
+      tip:'<button onclick="enterPracticeMode()" style="background:rgba(234,179,8,.2);border:1px solid rgba(234,179,8,.5);color:#eab308;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;">🎓 Abrir OS de práctica</button>' },
+  ],
+  solicitante: [
+    { icon:'📋', title:'Tus solicitudes',
+      desc:'En <strong>Mis Solicitudes</strong> ves todas las órdenes de servicio que creaste y su estado actual.',
+      tip:'👉 El estado se actualiza en tiempo real — no necesitás llamar al taller para saber cómo va.' },
+    { icon:'➕', title:'Nueva solicitud',
+      desc:'Describí el problema del vehículo con el mayor detalle posible. El supervisor recibe la solicitud y la programa.',
+      tip:'💡 Indicá si el vehículo está operativo o fuera de servicio — eso define la prioridad.' },
+    { icon:'🔔', title:'¡Listo!',
+      desc:'Cuando el trabajo esté finalizado podés confirmarlo desde la pantalla de tu solicitud.',
+      tip:'🎓 Podés volver a ver esta guía tocando el ícono de ayuda en el menú.' },
+  ],
+  flota: [
+    { icon:'🚛', title:'Responsable de Flota',
+      desc:'Tu responsabilidad es el estado operativo de cada vehículo. Desde <strong>Flota</strong> ves toda la información consolidada.',
+      tip:'👉 El % de aptitud de cada vehículo se actualiza automáticamente con cada inspección predictiva.' },
+    { icon:'📋', title:'Órdenes de servicio',
+      desc:'Podés crear, asignar y hacer seguimiento de todas las OS. Tenés los mismos permisos que el supervisor.',
+      tip:'💡 Priorizá vehículos con documentación por vencer (RTO, seguro).' },
+    { icon:'📊', title:'Dashboard y KPIs',
+      desc:'El dashboard muestra disponibilidad de flota, tiempo promedio de reparación y cumplimiento del taller.',
+      tip:'🎓 Podés volver a ver esta guía tocando el ícono de ayuda en el menú.' },
+  ],
+  admin: [
+    { icon:'📊', title:'Dashboard ejecutivo',
+      desc:'KPIs de la operación: disponibilidad de flota, MTTR, ratio PM/CM y cumplimiento de compromisos.',
+      tip:'👉 Usá el dashboard para detectar tendencias y tomar decisiones de gestión.' },
+    { icon:'🚛', title:'Gestión de flota',
+      desc:'Desde <strong>Flota</strong> ves el estado, aptitud y documentos de cada vehículo. El % se calcula desde los predictivos.',
+      tip:'🎯 Vehículos con aptitud < 60% requieren atención prioritaria.' },
+    { icon:'📋', title:'Órdenes de servicio',
+      desc:'Flujo completo: Pendiente → En ejecución → Finalizada → Aprobada. Cada estado requiere su rol.',
+      tip:'💡 Usá los filtros para ver OS por estado, tipo o vehículo.' },
+    { icon:'⚙',  title:'Configuración',
+      desc:'Gestión de usuarios y roles. Creá nuevos usuarios, cambiá contraseñas y asigná roles desde acá.',
+      tip:'🎓 Podés volver a ver esta guía tocando el ícono de ayuda en el menú.' },
+  ],
+};
+ONBOARDING_STEPS.flota = ONBOARDING_STEPS.flota;
+
+let _obSteps = [];
+let _obIdx   = 0;
+
+function showOnboarding(rol, userId) {
+  if (localStorage.getItem('nielsen_ob_' + userId)) return;
+  _obSteps = ONBOARDING_STEPS[rol] || ONBOARDING_STEPS['admin'];
+  _obIdx   = 0;
+  _renderOnboardingStep();
+  openModal('modal-onboarding');
+}
+
+function _renderOnboardingStep() {
+  const step   = _obSteps[_obIdx];
+  const total  = _obSteps.length;
+  const isLast = _obIdx === total - 1;
+
+  document.getElementById('ob-icon').textContent  = step.icon;
+  document.getElementById('ob-title').textContent = step.title;
+  document.getElementById('ob-subtitle').textContent = `Paso ${_obIdx + 1} de ${total}`;
+  document.getElementById('ob-body').innerHTML = `
+    <p style="font-size:13.5px;color:var(--text);line-height:1.65;margin-bottom:14px;">${step.desc}</p>
+    <div style="background:var(--bg3);border-left:3px solid var(--acc);border-radius:0 6px 6px 0;padding:10px 14px;font-size:12px;color:var(--muted);">${step.tip}</div>`;
+
+  document.getElementById('ob-dots').innerHTML = _obSteps.map((_, i) =>
+    `<div style="height:7px;border-radius:4px;transition:all .25s;background:${i===_obIdx?'#60a5fa':'#334155'};width:${i===_obIdx?'22px':'8px'};"></div>`
+  ).join('');
+
+  document.getElementById('ob-prev').style.display = _obIdx > 0 ? '' : 'none';
+  const nextBtn = document.getElementById('ob-next');
+  if (isLast) {
+    nextBtn.textContent = '¡Listo! ✓';
+    nextBtn.style.background = 'var(--green)';
+  } else {
+    nextBtn.textContent = 'Siguiente →';
+    nextBtn.style.background = '';
+  }
+  document.getElementById('ob-skip').textContent = isLast ? 'Cerrar' : 'Saltar guía';
+}
+
+function nextOnboardingStep() {
+  if (_obIdx < _obSteps.length - 1) { _obIdx++; _renderOnboardingStep(); }
+  else closeOnboarding();
+}
+
+function prevOnboardingStep() {
+  if (_obIdx > 0) { _obIdx--; _renderOnboardingStep(); }
+}
+
+function closeOnboarding() {
+  const u = currentUser();
+  if (u) localStorage.setItem('nielsen_ob_' + u.id, '1');
+  closeModal('modal-onboarding');
+}
+
+function toggleHelpMenu(btn) {
+  const menu = document.getElementById('help-menu');
+  if (!menu) return;
+  const isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if (!isOpen) {
+    setTimeout(() => document.addEventListener('click', function _close(e) {
+      if (!e.target.closest('#help-menu') && !e.target.closest('[onclick*="toggleHelpMenu"]')) {
+        menu.style.display = 'none';
+        document.removeEventListener('click', _close);
+      }
+    }), 50);
+  }
+}
+
+function resetOnboarding() {
+  // Abre la guía bajo demanda sin tocar el flag de "primera vez"
+  const u   = currentUser();
+  const rol = u?.rol || 'admin';
+  _obSteps = ONBOARDING_STEPS[rol] || ONBOARDING_STEPS['admin'];
+  _obIdx   = 0;
+  _renderOnboardingStep();
+  openModal('modal-onboarding');
+}
+
+// ════════════════════════════════════════════════════════════
+// AGENTE DE FLOTA — Chat UI + Edge Function
+// ════════════════════════════════════════════════════════════
+const AGENT_URL = 'https://snxfuevrevahmzlybteu.supabase.co/functions/v1/fleet-agent';
+let _agentMessages = []; // { role, content }
+let _agentBusy = false;
+
+function _agentTime() {
+  return new Date().toLocaleTimeString('es-AR', { hour:'2-digit', minute:'2-digit' });
+}
+
+function _appendMsg(role, text) {
+  const container = document.getElementById('chat-messages');
+  document.getElementById('chat-empty')?.remove();
+  document.getElementById('chat-suggestions')?.style && (document.getElementById('chat-suggestions').style.display = 'none');
+
+  const wrap = document.createElement('div');
+  wrap.className = `msg ${role}`;
+  wrap.innerHTML = `
+    <div class="msg-bubble">${text.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+    <div class="msg-time">${_agentTime()}</div>`;
+  container.appendChild(wrap);
+  container.scrollTop = container.scrollHeight;
+  return wrap;
+}
+
+function _showThinking() {
+  const container = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.id = 'chat-thinking';
+  el.className = 'chat-thinking';
+  el.innerHTML = `<div class="chat-thinking-dots"><span></span><span></span><span></span></div> Consultando datos de la flota...`;
+  container.appendChild(el);
+  container.scrollTop = container.scrollHeight;
+}
+
+function _hideThinking() {
+  document.getElementById('chat-thinking')?.remove();
+}
+
+async function sendAgentMessage() {
+  if (_agentBusy) return;
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  input.style.height = '44px';
+  _appendMsg('user', text);
+  _agentMessages.push({ role: 'user', content: text });
+
+  _agentBusy = true;
+  document.getElementById('chat-send-btn').disabled = true;
+  _showThinking();
+
+  try {
+    const session = (await SB.auth.getSession())?.data?.session;
+    const headers = { 'Content-Type': 'application/json', 'apikey': SUPABASE_KEY };
+    if (session?.access_token) headers['Authorization'] = 'Bearer ' + session.access_token;
+
+    const res = await fetch(AGENT_URL, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        messages: _agentMessages,
+        system_context: `Flota con ${vehicles?.length || 0} vehículos. Fecha actual: ${new Date().toLocaleDateString('es-AR')}.`
+      })
+    });
+
+    const data = await res.json();
+    _hideThinking();
+
+    if (!res.ok) throw new Error(data.error || 'Error del servidor');
+
+    const reply = data.response || 'Sin respuesta.';
+    _appendMsg('assistant', reply);
+    _agentMessages.push({ role: 'assistant', content: reply });
+
+  } catch (err) {
+    _hideThinking();
+    _appendMsg('assistant', `⚠️ Error al contactar al agente: ${err.message}`);
+  } finally {
+    _agentBusy = false;
+    document.getElementById('chat-send-btn').disabled = false;
+    document.getElementById('chat-input')?.focus();
+  }
+}
+
+function sendSuggestion(text) {
+  const input = document.getElementById('chat-input');
+  if (input) { input.value = text; }
+  sendAgentMessage();
+}
+
+function clearAgentChat() {
+  _agentMessages = [];
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = `
+    <div class="chat-empty" id="chat-empty">
+      <div class="chat-empty-icon">🤖</div>
+      <div class="chat-empty-title">Asistente Nielsen</div>
+      <div class="chat-empty-sub">Preguntame sobre el estado de la flota, mantenimientos pendientes, problemas frecuentes o estadísticas.</div>
+    </div>`;
+  const sugg = document.getElementById('chat-suggestions');
+  if (sugg) sugg.style.display = '';
+}
+
 </script>
 
 <!-- ═══════════════════════════════════════════════════════════
@@ -11513,6 +12315,30 @@ document.addEventListener('DOMContentLoaded', () => {
     <div id="login-error"></div>
     <button class="login-btn" id="login-btn" onclick="doLogin()">INGRESAR</button>
     <div class="login-footer">Nielsen Logística y Expediciones SA · v2.0</div>
+  </div>
+</div>
+
+<!-- ══ MODAL ONBOARDING ═════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-onboarding" style="z-index:600;">
+  <div class="modal" style="max-width:520px;padding:0;overflow:hidden;">
+    <div id="ob-header" style="padding:28px 28px 20px;background:linear-gradient(135deg,#1e3a5f,#0f172a);">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div id="ob-icon" style="font-size:52px;line-height:1;"></div>
+        <div>
+          <div id="ob-title" style="font-size:19px;font-weight:800;color:#f8fafc;"></div>
+          <div id="ob-subtitle" style="font-size:11px;color:#94a3b8;margin-top:3px;letter-spacing:.5px;text-transform:uppercase;"></div>
+        </div>
+      </div>
+      <div id="ob-dots" style="display:flex;gap:6px;margin-top:20px;"></div>
+    </div>
+    <div id="ob-body" style="padding:26px 28px;min-height:130px;"></div>
+    <div style="padding:14px 28px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:var(--surface2);">
+      <button class="btn btn-ghost btn-sm" id="ob-skip" onclick="closeOnboarding()">Saltar guía</button>
+      <div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm" id="ob-prev" onclick="prevOnboardingStep()" style="display:none;">← Anterior</button>
+        <button class="btn btn-primary btn-sm" id="ob-next" onclick="nextOnboardingStep()">Siguiente →</button>
+      </div>
+    </div>
   </div>
 </div>
 
