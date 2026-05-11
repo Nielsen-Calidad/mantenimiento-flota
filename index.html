@@ -1912,18 +1912,8 @@ function jsonOut(data) {
           <option>Cancelada</option>
         </select>
 
-        <!-- Ejecutantes — asignados por el supervisor antes de iniciar -->
-        <div class="form-sec">Ejecutantes involucrados</div>
-        <div class="fg" style="flex-direction:column;gap:8px;margin-bottom:16px;">
-          <div style="display:flex;gap:8px;align-items:center;">
-            <select id="f-ejec-select" style="flex:1;">
-              <option value="">— Agregar ejecutante —</option>
-            </select>
-            <button type="button" class="btn btn-ghost btn-sm" onclick="agregarEjecutante()" style="flex-shrink:0;">+ Agregar</button>
-          </div>
-          <div id="f-ejecutantes-chips" style="display:flex;flex-wrap:wrap;gap:6px;min-height:28px;"></div>
-          <input type="hidden" id="f-ejecutantes">
-        </div>
+        <!-- f-ejecutantes oculto — se mantiene para compatibilidad con datos históricos -->
+        <input type="hidden" id="f-ejecutantes">
         <div class="fg fg2" style="margin-bottom:8px;">
           <div class="ff">
             <label>Fecha compromiso <span style="font-size:10px;color:var(--muted);font-weight:400;">(fecha que el taller se compromete a entregar)</span><span class="tip-btn" onclick="showTip('fechaCompromiso',this)">ℹ</span></label>
@@ -2047,14 +2037,6 @@ function jsonOut(data) {
           <button class="btn btn-ghost btn-sm" onclick="addRepRow()">＋ Agregar repuesto</button>
         </div>
 
-        <div class="form-sec">Mano de obra</div>
-        <table class="mat-table">
-          <thead><tr><th>Mecánico / Operario</th><th width="120">Fecha</th><th width="100">Tiempo (hs)</th><th width="28"></th></tr></thead>
-          <tbody id="mo-tbody"></tbody>
-        </table>
-        <div class="mat-add-row">
-          <button class="btn btn-ghost btn-sm" onclick="addMORow()">＋ Agregar mecánico</button>
-        </div>
 
         <!-- FOTOS DEL TRABAJO -->
         <div class="form-sec">📷 Fotos del trabajo</div>
@@ -2392,14 +2374,6 @@ function jsonOut(data) {
       </table>
       <div class="mat-add-row">
         <button class="btn btn-ghost btn-sm" onclick="addMatRowTaller()">＋ Agregar material</button>
-      </div>
-      <div class="form-sec" style="margin-top:14px;">Mano de obra</div>
-      <table class="mat-table">
-        <thead><tr><th>Operario</th><th width="120">Fecha</th><th width="100">Horas</th><th width="28"></th></tr></thead>
-        <tbody id="mt-mo-tbody"></tbody>
-      </table>
-      <div class="mat-add-row">
-        <button class="btn btn-ghost btn-sm" onclick="addMORowTaller()">＋ Agregar operario</button>
       </div>
     </div>
 
@@ -3898,7 +3872,7 @@ function lockEjecucion(lock, message, planMode = false) {
   }
 
   // -- Tablas mat / rep / MO: mecánico SÍ puede editar insumos, repuestos y mano de obra --
-  ['mat-tbody','rep-tbody','mo-tbody'].forEach(id => {
+  ['mat-tbody','rep-tbody'].forEach(id => {
     const tb = document.getElementById(id);
     if (!tb) return;
     tb.querySelectorAll('input, select, button').forEach(el => {
@@ -3926,18 +3900,11 @@ function lockEjecucion(lock, message, planMode = false) {
   // En Pendiente (planMode=true) los supervisores SÍ pueden asignar ejecutantes y fecha compromiso.
   // Solo se bloquean si la OS está cerrada (Finalizada/Aprobada) o si no es supervisor.
   const lockSuperAssign = planMode ? !esSupervisor : (lock || !esSupervisor);
-  const superFields  = ['f-fecha-compromiso','f-ejec-select'];
-  superFields.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.disabled = lockSuperAssign;
-    el.style.opacity = lockSuperAssign ? '0.45' : '';
-    el.style.cursor  = lockSuperAssign ? 'not-allowed' : '';
-  });
-  const addEjecBtn = document.querySelector('button[onclick="agregarEjecutante()"]');
-  if (addEjecBtn) {
-    addEjecBtn.disabled = lockSuperAssign;
-    addEjecBtn.style.opacity = lockSuperAssign ? '0.45' : '';
+  const comprEl = document.getElementById('f-fecha-compromiso');
+  if (comprEl) {
+    comprEl.disabled = lockSuperAssign;
+    comprEl.style.opacity = lockSuperAssign ? '0.45' : '';
+    comprEl.style.cursor  = lockSuperAssign ? 'not-allowed' : '';
   }
 
   // -- Banner informativo bajo el cronómetro --
@@ -3980,6 +3947,11 @@ function iniciarOS() {
     ? '¿Fijar la hora de inicio ahora? El cronómetro arrancará desde este momento.'
     : '¿Iniciar el cronómetro? Se registrará la hora exacta de inicio del trabajo.';
   if (!confirm(msg)) return;
+
+  // Capturar todos los campos del formulario antes de cambiar el estado,
+  // para no perder ejecutantes, fecha compromiso o tareas ingresados sin guardar antes.
+  const formSnapshot = readOSForm();
+  Object.assign(os, formSnapshot);
 
   const now = new Date().toISOString();
   os.timestamp_inicio = now;
@@ -4045,11 +4017,16 @@ function finalizarOS() {
     durHs = durBase > 0 ? durBase.toFixed(2) : '0.00';
   }
 
+  // Capturar todos los campos del formulario antes de aplicar el cierre,
+  // para no perder datos ingresados sin haber guardado previamente.
+  const formSnapshot = readOSForm();
+  Object.assign(os, formSnapshot);
+
   os.timestamp_fin = nowISO;
   os.estado        = 'Finalizada';
   os.fecha_fin     = nowISO.split('T')[0];
   os.duracion_hs   = durHs;
-  os.tareas        = getTareas(); // guardar estados finales de tareas
+  os.tareas        = getTareas(); // guardar estados finales de tareas (ya auto-completadas)
 
   document.getElementById('f-estado').value    = 'Finalizada';
   document.getElementById('f-fecha-fin').value  = fmtDate(nowISO.split('T')[0]);
@@ -4558,7 +4535,6 @@ function clearOSForm() {
   document.getElementById('f-estado').value = 'Pendiente';
   document.getElementById('mat-tbody').innerHTML = '';
   const _repTb = document.getElementById('rep-tbody'); if(_repTb) _repTb.innerHTML = '';
-  document.getElementById('mo-tbody').innerHTML = '';
   const _tareaTb = document.getElementById('tareas-tbody'); if(_tareaTb) _tareaTb.innerHTML = '';
   clearComponente();
   const _compRow = document.getElementById('f-componente-row'); if(_compRow) _compRow.style.display = 'none';
@@ -4611,7 +4587,6 @@ async function saveOS() {
   function showErrorEjec(msg) { switchOSTab(1); alert('⚠ Campo obligatorio\n\n' + msg); }
 
   if (['En ejecución', 'Finalizada', 'Aprobada'].includes(estadoActual)) {
-    if (!d.tecnico.trim())      { showErrorEjec('Ingresá el técnico responsable de la ejecución.'); return; }
     if (!d.fecha_inicio)        { showErrorEjec('La fecha de inicio del trabajo es obligatoria.'); return; }
   }
   if (['Finalizada', 'Aprobada'].includes(estadoActual)) {
@@ -4750,9 +4725,8 @@ function openTallerModal() {
   // Cargar fotos de esta OS
   initPhotoDB().then(() => loadPhotoGrid('mt', tallerOsId));
   document.getElementById('mt-mat-tbody').innerHTML = '';
-  document.getElementById('mt-mo-tbody').innerHTML = '';
-  try { const arr=JSON.parse(os.materiales||'[]'); arr.forEach(r=>addMatRowTaller(r.cant,r.desc,r.parte)); } catch(e){}
-  try { const arr=JSON.parse(os.mano_obra||'[]'); arr.forEach(r=>addMORowTaller(r.nombre,r.fecha,r.tiempo)); } catch(e){}
+  // Solo cargar repuestos en el taller (los insumos tienen estructura distinta y se preservan al guardar)
+  try { JSON.parse(os.materiales||'[]').filter(r=>r.tipo==='repuesto'||(!r.tipo&&r.desc)).forEach(r=>addMatRowTaller(r.cant,r.desc,r.parte)); } catch(e){}
   closeModal('modal-detail');
   openModal('modal-taller');
 }
@@ -4763,23 +4737,21 @@ async function saveTallerWork() {
   const i = ordenes.findIndex(o => o.id === id);
   if (i < 0) return;
   const g = eid => document.getElementById(eid)?.value || '';
+  // Preservar insumos existentes — el taller solo edita repuestos
+  let insumosExistentes = [];
+  try { insumosExistentes = JSON.parse(ordenes[i].materiales||'[]').filter(r=>r.tipo==='insumo'); } catch(e){}
   const rows = document.querySelectorAll('#mt-mat-tbody tr');
-  const mats = JSON.stringify(Array.from(rows).map(tr => {
+  const repuestosTaller = Array.from(rows).map(tr => {
     const inp = tr.querySelectorAll('input');
-    return { cant: inp[0]?.value||'', desc: inp[1]?.value||'', parte: inp[2]?.value||'' };
-  }).filter(r => r.desc));
-  const moRows = document.querySelectorAll('#mt-mo-tbody tr');
-  const mo = JSON.stringify(Array.from(moRows).map(tr => {
-    const inp = tr.querySelectorAll('input');
-    return { nombre: inp[0]?.value||'', fecha: inp[1]?.value||'', tiempo: inp[2]?.value||'' };
-  }).filter(r => r.nombre));
-
+    return { tipo:'repuesto', cant: inp[0]?.value||'', desc: inp[1]?.value||'', parte: inp[2]?.value||'' };
+  }).filter(r => r.desc);
+  const mats = JSON.stringify([...insumosExistentes, ...repuestosTaller]);
   ordenes[i] = {
     ...ordenes[i],
     estado: g('mt-estado'), tecnico: g('mt-tecnico'),
     fecha_inicio: g('mt-fecha-inicio'), fecha_fin: g('mt-fecha-fin'),
     trabajo_realizado: g('mt-trabajo'), observaciones: g('mt-obs'),
-    materiales: mats, mano_obra: mo
+    materiales: mats
   };
 
   closeModal('modal-taller');
@@ -5055,7 +5027,17 @@ function syncTecnicoFromTareas() {
   const rows  = Array.from(document.querySelectorAll('#tareas-tbody tr'));
   const names = [...new Set(rows.map(tr => tr.querySelector('.tarea-sel-asignado')?.value || tr.querySelector('select')?.value || '').filter(Boolean))];
   const el    = document.getElementById('f-tecnico');
-  if (el) el.value = names.join(', ');
+  if (el) {
+    if (names.length > 0) {
+      el.value = names.join(', ');
+    } else {
+      // Fallback: usar ejecutantes asignados cuando no hay tareas
+      try {
+        const ejec = JSON.parse(document.getElementById('f-ejecutantes')?.value || '[]');
+        el.value = ejec.map(e => e.nombre || e).filter(Boolean).join(', ');
+      } catch(e) { el.value = ''; }
+    }
+  }
   updateChecklistAccess();
 }
 
