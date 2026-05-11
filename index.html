@@ -4942,8 +4942,8 @@ function setMateriales(str) {
   } catch(e){}
 }
 function setManoObra(str) {
-  document.getElementById('mo-tbody').innerHTML = '';
-  try { JSON.parse(str||'[]').forEach(r => addMORow(r.nombre,r.fecha,r.tiempo)); } catch(e){}
+  const tb = document.getElementById('mo-tbody');
+  if (tb) { tb.innerHTML = ''; try { JSON.parse(str||'[]').forEach(r => addMORow(r.nombre,r.fecha,r.tiempo)); } catch(e){} }
 }
 
 // ── TAREAS DE EJECUCIÓN ───────────────────────────────────────
