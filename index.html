@@ -3830,7 +3830,7 @@ function _applyRemoteChange({ name, value, user }) {
       // Checkbox individual: { idx, checked }
       const { idx, checked } = JSON.parse(value);
       const cb = document.querySelector(`#f-checklist-container input[type=checkbox][data-idx="${idx}"]`);
-      if (cb) { cb.checked = checked; updateChecklistProgress(); }
+      if (cb) { cb.checked = checked; updateChecklistProgress(); _applyLavadoGateVisual(); }
     } else if (name === 'obs-item') {
       // Observación de ítem BRM: { idx, val }
       const { idx, val } = JSON.parse(value);
