@@ -3494,10 +3494,40 @@ function stopTimerDisplay() {
 // ── EDICIÓN COLABORATIVA — Supabase Realtime Broadcast ────────────────────
 // Canal efímero por OS: los cambios de campo se difunden en tiempo real a
 // todos los que tengan esa OS abierta, sin escribir a la DB y sin polling.
+// Además, al guardar se hace un merge campo por campo: si B no modificó un
+// campo respecto al snapshot de apertura, se usa la versión del DB (que ya
+// tiene los cambios guardados por A).
 
 let _collabChannel  = null;
 let _collabDebounce = {};
 let _applyingRemote = false; // evita loop A→broadcast→B→broadcast→A
+let _openSnapshot   = null;  // estado del form cuando se abrió la OS
+
+// Campos que participan en el merge colaborativo al guardar
+const _MERGE_FIELDS = [
+  'trabajo_realizado','observaciones','km_cierre','obs_final',
+  'causa_raiz','fecha_compromiso','tareas','checklist','materiales','mano_obra'
+];
+
+// Merge inteligente: para campos que B no tocó → usar versión DB (cambios de A)
+// Para campos que B sí tocó → usar form de B
+function _mergeFieldsWithDB(dbVersion, formData) {
+  if (!_openSnapshot || !dbVersion) return { ...dbVersion, ...formData };
+  const merged = { ...dbVersion };
+  Object.keys(formData).forEach(key => {
+    if (!_MERGE_FIELDS.includes(key)) {
+      merged[key] = formData[key]; // campos de solicitud/estado: siempre del form
+      return;
+    }
+    const formVal = (formData[key] || '').toString().trim();
+    const snapVal = (_openSnapshot[key] || '').toString().trim();
+    if (formVal !== snapVal) {
+      merged[key] = formData[key]; // B modificó este campo → usar form
+    }
+    // Si B no lo modificó, queda la versión DB (que puede tener cambios de A)
+  });
+  return merged;
+}
 
 // Campos simples que se sincronizan 1:1 por ID de elemento
 const _COLLAB_FIELDS = {
@@ -4325,6 +4355,8 @@ function editOS(id) {
   openModal('modal-os');
   _osFormDirty = false;
   joinCollabChannel(id); // unirse al canal colaborativo de esta OS
+  // Snapshot del form al abrir: base para merge colaborativo al guardar
+  setTimeout(() => { _openSnapshot = readOSForm(); }, 300);
 }
 
 function readOSForm() {
@@ -4598,8 +4630,14 @@ async function saveOS() {
   let finalOS;
   if (editingId) {
     const i = ordenes.findIndex(o => o.id === editingId);
-    if (i >= 0) { ordenes[i] = {...ordenes[i], ...d}; finalOS = ordenes[i]; }
+    if (i >= 0) {
+      // Merge colaborativo: para campos que este usuario no tocó se conserva
+      // la versión del DB (que puede tener cambios guardados por otro usuario)
+      ordenes[i] = _mergeFieldsWithDB(ordenes[i], d);
+      finalOS = ordenes[i];
+    }
   } else {
+    _openSnapshot = null; // OS nueva: no aplica merge
     finalOS = { id: nextId(), ...d };
     appendHistorial(finalOS, 'Creada');
     ordenes.push(finalOS);
@@ -6628,6 +6666,7 @@ function closeModal(id) {
     stopTimerDisplay();    // liberar el interval; se relanza en switchOSTab al reabrir
     _stopAllTareaTimers(); // detener todos los timers de tareas individuales
     leaveCollabChannel();  // abandonar canal colaborativo de esta OS
+    _openSnapshot = null;  // limpiar snapshot para próxima apertura
   }
 }
 
