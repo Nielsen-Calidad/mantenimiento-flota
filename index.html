@@ -3749,15 +3749,21 @@ function leaveCollabChannel() {
   _collabDebounce = {};
 }
 
-function _bcField(name, value) {
+// debounceKey: clave única para el timer (ej. 'brm-5')
+// value: payload a enviar
+// broadcastName: nombre del evento en el receptor (ej. 'brm'). Si omitido, usa debounceKey
+// delay: ms de debounce. 30 para clicks de checklist, 350 para texto
+function _bcField(debounceKey, value, broadcastName, delay) {
   if (!_collabChannel || _applyingRemote) return;
-  clearTimeout(_collabDebounce[name]);
-  _collabDebounce[name] = setTimeout(() => {
+  const name = broadcastName || debounceKey;
+  const ms   = delay !== undefined ? delay : 350;
+  clearTimeout(_collabDebounce[debounceKey]);
+  _collabDebounce[debounceKey] = setTimeout(() => {
     _collabChannel.send({
       type: 'broadcast', event: 'field',
       payload: { name, value, user: currentUser()?.email?.split('@')[0] || 'usuario' }
     });
-  }, 350);
+  }, ms);
 }
 
 function _applyRemoteChange({ name, value, user }) {
@@ -3765,11 +3771,29 @@ function _applyRemoteChange({ name, value, user }) {
   try {
     const elId = _COLLAB_FIELDS_INV[name];
     if (elId) {
+      // Campo de texto simple
       const el = document.getElementById(elId);
       if (el && document.activeElement !== el) el.value = value;
-    } else if (name === 'tareas')     { setTareas(value); }
-    else if (name === 'checklist')    { setChecklistData(value); }
-    else if (name === 'materiales')   { setMateriales(value); }
+    } else if (name === 'brm') {
+      // Botón BRM individual: { idx, brm }
+      const { idx, brm } = JSON.parse(value);
+      const row = document.getElementById('ci-pred-' + idx);
+      if (row) {
+        const btn = row.querySelector(`button[data-brm="${brm}"]`);
+        if (btn) setBRM(btn);
+      }
+    } else if (name === 'cb') {
+      // Checkbox individual: { idx, checked }
+      const { idx, checked } = JSON.parse(value);
+      const cb = document.querySelector(`#f-checklist-container input[type=checkbox][data-idx="${idx}"]`);
+      if (cb) { cb.checked = checked; updateChecklistProgress(); }
+    } else if (name === 'obs-item') {
+      // Observación de ítem BRM: { idx, val }
+      const { idx, val } = JSON.parse(value);
+      const obsEl = document.querySelector(`#f-checklist-container input[data-obs="${idx}"]`);
+      if (obsEl && document.activeElement !== obsEl) obsEl.value = val;
+    } else if (name === 'tareas')   { setTareas(value); }
+    else if (name === 'materiales') { setMateriales(value); }
   } finally {
     _applyingRemote = false;
   }
@@ -3810,51 +3834,48 @@ function _showCollabToast(user, field) {
     if (name) _bcField(name, e.target.value);
   });
 
-  // Checklist — checkboxes y botones BRM
+  // Checklist — BRM y checkboxes: broadcast quirúrgico por ítem (sin re-render)
   modal.addEventListener('click', e => {
     if (_applyingRemote) return;
-    const inChecklist = e.target.closest('#f-checklist-container');
-    if (!inChecklist) return;
-    const isBRM = e.target.dataset?.brm !== undefined;
-    const isCB  = e.target.type === 'checkbox';
-    if (isBRM || isCB) {
-      clearTimeout(_collabDebounce['checklist']);
-      _collabDebounce['checklist'] = setTimeout(() => _bcField('checklist', getChecklistData()), 120);
+    if (!e.target.closest('#f-checklist-container')) return;
+    if (e.target.tagName === 'BUTTON' && e.target.dataset.brm && e.target.dataset.idx != null) {
+      // Botón BRM: 30ms para sentirse instantáneo; la visual ya la hizo setBRM()
+      const idx = e.target.dataset.idx;
+      const brm = e.target.dataset.brm;
+      _bcField('brm-' + idx, JSON.stringify({ idx, brm }), 'brm', 30);
+    } else if (e.target.type === 'checkbox' && e.target.dataset.idx != null) {
+      // Checkbox: 30ms; el estado checked ya fue toggleado por el browser
+      const idx = e.target.dataset.idx;
+      _bcField('cb-' + idx, JSON.stringify({ idx, checked: e.target.checked }), 'cb', 30);
     }
   });
 
-  // Observaciones de checklist (inputs de obs dentro del checklist)
+  // Observación de ítem BRM: broadcast por ítem, debounce 400ms (texto)
   modal.addEventListener('input', e => {
     if (_applyingRemote) return;
-    if (e.target.dataset?.obs !== undefined && e.target.closest('#f-checklist-container')) {
-      clearTimeout(_collabDebounce['checklist']);
-      _collabDebounce['checklist'] = setTimeout(() => _bcField('checklist', getChecklistData()), 400);
+    if (e.target.closest('#f-checklist-container') && e.target.dataset.obs != null) {
+      const idx = e.target.dataset.obs;
+      _bcField('obs-' + idx, JSON.stringify({ idx, val: e.target.value }), 'obs-item', 400);
     }
   }, true);
 
   // Tareas — cualquier cambio dentro del contenedor de tareas
-  modal.addEventListener('input', e => {
+  modal.addEventListener('input',  e => {
     if (_applyingRemote) return;
-    if (e.target.closest('#tareas-tbody') || e.target.closest('[id^="tarea-"]')) {
-      clearTimeout(_collabDebounce['tareas']);
-      _collabDebounce['tareas'] = setTimeout(() => _bcField('tareas', getTareas()), 400);
-    }
+    if (e.target.closest('#tareas-tbody') || e.target.closest('[id^="tarea-"]'))
+      _bcField('tareas', getTareas(), undefined, 400);
   }, true);
   modal.addEventListener('change', e => {
     if (_applyingRemote) return;
-    if (e.target.closest('#tareas-tbody') || e.target.closest('[id^="tarea-"]')) {
-      clearTimeout(_collabDebounce['tareas']);
-      _collabDebounce['tareas'] = setTimeout(() => _bcField('tareas', getTareas()), 200);
-    }
+    if (e.target.closest('#tareas-tbody') || e.target.closest('[id^="tarea-"]'))
+      _bcField('tareas', getTareas(), undefined, 200);
   }, true);
 
   // Materiales
   modal.addEventListener('input', e => {
     if (_applyingRemote) return;
-    if (e.target.closest('#mat-tbody')) {
-      clearTimeout(_collabDebounce['materiales']);
-      _collabDebounce['materiales'] = setTimeout(() => _bcField('materiales', getMateriales()), 400);
-    }
+    if (e.target.closest('#mat-tbody') || e.target.closest('#rep-tbody'))
+      _bcField('materiales', getMateriales(), undefined, 400);
   }, true);
 })();
 // ── fin edición colaborativa ───────────────────────────────────────────────
