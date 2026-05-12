@@ -3491,6 +3491,153 @@ function stopTimerDisplay() {
   if (_timerInterval) { clearInterval(_timerInterval); _timerInterval = null; }
 }
 
+// ── EDICIÓN COLABORATIVA — Supabase Realtime Broadcast ────────────────────
+// Canal efímero por OS: los cambios de campo se difunden en tiempo real a
+// todos los que tengan esa OS abierta, sin escribir a la DB y sin polling.
+
+let _collabChannel  = null;
+let _collabDebounce = {};
+let _applyingRemote = false; // evita loop A→broadcast→B→broadcast→A
+
+// Campos simples que se sincronizan 1:1 por ID de elemento
+const _COLLAB_FIELDS = {
+  'f-trabajo':          'trabajo_realizado',
+  'f-obs':              'observaciones',
+  'f-km-cierre':        'km_cierre',
+  'f-obs-final':        'obs_final',
+  'f-causa-raiz':       'causa_raiz',
+  'f-fecha-compromiso': 'fecha_compromiso',
+};
+// Mapa inverso: nombre lógico → id de elemento
+const _COLLAB_FIELDS_INV = Object.fromEntries(
+  Object.entries(_COLLAB_FIELDS).map(([k,v]) => [v,k])
+);
+
+function joinCollabChannel(osId) {
+  leaveCollabChannel();
+  _collabChannel = SB.channel(`os-collab-${osId}`, {
+    config: { broadcast: { self: false, ack: false } }
+  });
+  _collabChannel
+    .on('broadcast', { event: 'field' }, ({ payload }) => _applyRemoteChange(payload))
+    .subscribe();
+}
+
+function leaveCollabChannel() {
+  if (_collabChannel) { SB.removeChannel(_collabChannel); _collabChannel = null; }
+  _collabDebounce = {};
+}
+
+function _bcField(name, value) {
+  if (!_collabChannel || _applyingRemote) return;
+  clearTimeout(_collabDebounce[name]);
+  _collabDebounce[name] = setTimeout(() => {
+    _collabChannel.send({
+      type: 'broadcast', event: 'field',
+      payload: { name, value, user: currentUser()?.email?.split('@')[0] || 'usuario' }
+    });
+  }, 350);
+}
+
+function _applyRemoteChange({ name, value, user }) {
+  _applyingRemote = true;
+  try {
+    const elId = _COLLAB_FIELDS_INV[name];
+    if (elId) {
+      const el = document.getElementById(elId);
+      if (el && document.activeElement !== el) el.value = value;
+    } else if (name === 'tareas')     { setTareas(value); }
+    else if (name === 'checklist')    { setChecklistData(value); }
+    else if (name === 'materiales')   { setMateriales(value); }
+  } finally {
+    _applyingRemote = false;
+  }
+  _showCollabToast(user, name);
+}
+
+function _showCollabToast(user, field) {
+  let toast = document.getElementById('collab-toast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = 'collab-toast';
+    toast.style.cssText = [
+      'position:fixed;bottom:28px;right:28px;z-index:10000;',
+      'background:#1e293b;border:1px solid #a855f7;border-radius:8px;',
+      'padding:8px 14px;font-size:12px;color:#c084fc;',
+      'display:flex;align-items:center;gap:8px;',
+      'box-shadow:0 4px 20px rgba(0,0,0,.5);',
+      'transition:opacity .3s;pointer-events:none;'
+    ].join('');
+    document.body.appendChild(toast);
+  }
+  const dot = '<span style="width:7px;height:7px;border-radius:50%;background:#a855f7;display:inline-block;flex-shrink:0;"></span>';
+  toast.innerHTML = `${dot} <span><strong>${user}</strong> está editando…</span>`;
+  toast.style.opacity = '1';
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+}
+
+// ── Delegación de eventos para broadcast ──────────────────────────────────
+(function _setupCollabListeners() {
+  const modal = document.getElementById('modal-os');
+  if (!modal) return;
+
+  // Campos de texto simples
+  modal.addEventListener('input', e => {
+    if (_applyingRemote) return;
+    const name = _COLLAB_FIELDS[e.target?.id];
+    if (name) _bcField(name, e.target.value);
+  });
+
+  // Checklist — checkboxes y botones BRM
+  modal.addEventListener('click', e => {
+    if (_applyingRemote) return;
+    const inChecklist = e.target.closest('#f-checklist-container');
+    if (!inChecklist) return;
+    const isBRM = e.target.dataset?.brm !== undefined;
+    const isCB  = e.target.type === 'checkbox';
+    if (isBRM || isCB) {
+      clearTimeout(_collabDebounce['checklist']);
+      _collabDebounce['checklist'] = setTimeout(() => _bcField('checklist', getChecklistData()), 120);
+    }
+  });
+
+  // Observaciones de checklist (inputs de obs dentro del checklist)
+  modal.addEventListener('input', e => {
+    if (_applyingRemote) return;
+    if (e.target.dataset?.obs !== undefined && e.target.closest('#f-checklist-container')) {
+      clearTimeout(_collabDebounce['checklist']);
+      _collabDebounce['checklist'] = setTimeout(() => _bcField('checklist', getChecklistData()), 400);
+    }
+  }, true);
+
+  // Tareas — cualquier cambio dentro del contenedor de tareas
+  modal.addEventListener('input', e => {
+    if (_applyingRemote) return;
+    if (e.target.closest('#tareas-tbody') || e.target.closest('[id^="tarea-"]')) {
+      clearTimeout(_collabDebounce['tareas']);
+      _collabDebounce['tareas'] = setTimeout(() => _bcField('tareas', getTareas()), 400);
+    }
+  }, true);
+  modal.addEventListener('change', e => {
+    if (_applyingRemote) return;
+    if (e.target.closest('#tareas-tbody') || e.target.closest('[id^="tarea-"]')) {
+      clearTimeout(_collabDebounce['tareas']);
+      _collabDebounce['tareas'] = setTimeout(() => _bcField('tareas', getTareas()), 200);
+    }
+  }, true);
+
+  // Materiales
+  modal.addEventListener('input', e => {
+    if (_applyingRemote) return;
+    if (e.target.closest('#mat-tbody')) {
+      clearTimeout(_collabDebounce['materiales']);
+      _collabDebounce['materiales'] = setTimeout(() => _bcField('materiales', getMateriales()), 400);
+    }
+  }, true);
+})();
+// ── fin edición colaborativa ───────────────────────────────────────────────
+
 function _showRealtimeEditWarning(newData) {
   const bannerId = 'realtime-edit-warning';
   if (document.getElementById(bannerId)) return; // ya visible
@@ -4177,6 +4324,7 @@ function editOS(id) {
   closeModal('modal-detail');
   openModal('modal-os');
   _osFormDirty = false;
+  joinCollabChannel(id); // unirse al canal colaborativo de esta OS
 }
 
 function readOSForm() {
@@ -6479,6 +6627,7 @@ function closeModal(id) {
     lockSolicitudTab(false);
     stopTimerDisplay();    // liberar el interval; se relanza en switchOSTab al reabrir
     _stopAllTareaTimers(); // detener todos los timers de tareas individuales
+    leaveCollabChannel();  // abandonar canal colaborativo de esta OS
   }
 }
 
