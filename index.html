@@ -4629,7 +4629,7 @@ function readOSForm() {
   return {
     numero: g('f-numero'), tipo: g('f-tipo'),
     fecha_pedido: g('f-fecha-pedido'), solicitante: g('f-solicitante'),
-    area_solicitante: g('f-area-sol'), area_destino: 'Taller Mecánico',
+    area_solicitante: g('f-area-sol'), area_destino: g('f-area-dest') || 'Taller Mecánico',
     responsable: g('f-responsable'),
     plazo: (()=>{
       const num = parseInt(document.getElementById('f-plazo-num')?.value)||0;
