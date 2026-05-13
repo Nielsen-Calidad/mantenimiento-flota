@@ -10844,7 +10844,9 @@ function setChecklistData(str) {
     if (sec) sec.style.display = '';
 
     if (data.nivel === 'predictivo') {
-      // Modo predictivo
+      // Modo predictivo — usa renderChecklistItemsPred para conservar el layout
+      // de 3 etapas y los estados B/R/M. renderChecklistItems es solo para
+      // checklists de tipo checkbox (preventivo/correctivo/expansión).
       const nivelRow = document.getElementById('f-nivel-sol-row');
       const secTitle = document.getElementById('f-checklist-title');
       if (nivelRow) nivelRow.style.display = 'none';
@@ -10853,7 +10855,7 @@ function setChecklistData(str) {
       const v2 = vehicles.find(x => x.id === vehId2);
       const planP = getChecklistPlanPred(v2?.tipo || '');
       const itemsP = planP?.items || data.items || [];
-      if (itemsP.length) renderChecklistItems(itemsP, cont, false, data.items);
+      if (itemsP.length) renderChecklistItemsPred(itemsP, cont, false, data.items);
 
     } else if (data.nivel === 'correctivo') {
       // Modo correctivo
